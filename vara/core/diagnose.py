@@ -337,7 +337,7 @@ def _summarize(diagnoses: list[ExpectedDocumentDiagnosis], errors: list[str]) ->
 
 __all__ = [
     "DiagnosisFinding",
-    "ExpectedDocumentDiagnosis",
     "DiagnosisResult",
+    "ExpectedDocumentDiagnosis",
     "diagnose_retrieval",
 ]

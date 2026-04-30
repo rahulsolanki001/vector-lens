@@ -22,7 +22,7 @@ Schema overview:
 Validation rules:
   - Backend names must be unique across the list
   - Backend names must be slug-like (alphanumeric, hyphens, underscores)
-  - Port must be in the valid range 1–65535
+  - Port must be in the valid range 1-65535
   - log_level must be one of: debug, info, warning, error
   - At most 20 backends (sanity limit — not a hard product constraint)
 """
@@ -152,7 +152,7 @@ class BackendConfig(BaseModel):
             raise ValueError(
                 f"Backend name '{v}' is invalid. "
                 f"Use only letters, numbers, hyphens, and underscores "
-                f"(1–64 characters, must start with a letter or number)."
+                f"(1-64 characters, must start with a letter or number)."
             )
         return v
 

@@ -360,15 +360,15 @@ def _pearson(values_a: Sequence[float], values_b: Sequence[float]) -> float | No
     if denom_a == 0 or denom_b == 0:
         return None
 
-    return round(numerator / (denom_a * denom_b), 6)
+    return float(round(numerator / (denom_a * denom_b), 6))
 
 
 __all__ = [
-    "BackendQueryResult",
-    "BackendQueryError",
-    "HitAlignment",
-    "DebugQueryResult",
     "BackendComparison",
-    "debug_query",
+    "BackendQueryError",
+    "BackendQueryResult",
+    "DebugQueryResult",
+    "HitAlignment",
     "compare_backends",
+    "debug_query",
 ]

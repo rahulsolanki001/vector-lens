@@ -12,8 +12,8 @@ from vara.core.health import health_check
 
 __version__ = "0.1.0"
 __all__ = [
-    "debug_query",
-    "health_check",
-    "diagnose_retrieval",
     "compare_backends",
+    "debug_query",
+    "diagnose_retrieval",
+    "health_check",
 ]

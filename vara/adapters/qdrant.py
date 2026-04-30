@@ -13,7 +13,7 @@ Supports:
 from __future__ import annotations
 
 import time
-from typing import Any
+from typing import Any, cast
 
 try:
     from qdrant_client import AsyncQdrantClient
@@ -36,7 +36,6 @@ from vara.adapters.base import (
     VecDBAdapter,
     VectorRecord,
 )
-
 
 # ── Distance metric mapping ───────────────────────────────────────────────────
 
@@ -85,16 +84,16 @@ def _translate_filter(filters: dict[str, Any] | None) -> qmodels.Filter | None:
             for sub in value:
                 sub_filter = _translate_filter(sub)
                 if sub_filter:
-                    must.append(sub_filter)  # type: ignore[arg-type]
+                    must.append(sub_filter)
         elif key == "$or":
             for sub in value:
                 sub_filter = _translate_filter(sub)
                 if sub_filter:
-                    should.append(sub_filter)  # type: ignore[arg-type]
+                    should.append(sub_filter)
         elif key == "$not":
             sub_filter = _translate_filter(value)
             if sub_filter:
-                must_not.append(sub_filter)  # type: ignore[arg-type]
+                must_not.append(sub_filter)
         elif isinstance(value, dict):
             # Comparison operators on a field
             range_kwargs: dict[str, float] = {}
@@ -238,9 +237,9 @@ class QdrantAdapter(VecDBAdapter):
 
         for col in response.collections:
             try:
-                info = await self._c.get_collection(col.name)
-                config = info.config
-                vec_config = config.params.vectors
+                info: Any = await self._c.get_collection(col.name)
+                config: Any = info.config
+                vec_config: Any = config.params.vectors
 
                 # vectors config can be a single VectorsConfig or a named dict
                 if isinstance(vec_config, dict):
@@ -277,9 +276,9 @@ class QdrantAdapter(VecDBAdapter):
 
     async def collection_stats(self, collection: str) -> CollectionStats:
         """Return detailed stats for a collection — used by Index Health panel."""
-        info = await self._c.get_collection(collection)
-        config = info.config
-        vec_config = config.params.vectors
+        info: Any = await self._c.get_collection(collection)
+        config: Any = info.config
+        vec_config: Any = config.params.vectors
 
         # Resolve dimension + distance
         if isinstance(vec_config, dict):
@@ -365,7 +364,8 @@ class QdrantAdapter(VecDBAdapter):
 
         t0 = time.perf_counter()
 
-        results = await self._c.search(
+        client = cast(Any, self._c)
+        results = await client.search(
             collection_name=request.collection,
             query_vector=request.vector,
             query_filter=qdrant_filter,
@@ -547,7 +547,7 @@ class QdrantAdapter(VecDBAdapter):
                 detail=f"m={m}",
                 recommendation=(
                     "m controls graph connectivity. Values below 8 reduce recall. "
-                    "Default is 16; use 32–64 for high-recall requirements."
+                    "Default is 16; use 32-64 for high-recall requirements."
                 ),
             ))
 

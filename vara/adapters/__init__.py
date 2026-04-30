@@ -18,14 +18,14 @@ from vara.adapters.base import (
 )
 
 __all__ = [
-    "VecDBAdapter",
     "AdapterConfig",
     "CollectionInfo",
     "CollectionStats",
+    "HealthReport",
     "QueryRequest",
     "QueryResult",
+    "VecDBAdapter",
     "VectorRecord",
-    "HealthReport",
     "build_adapter",
 ]
 

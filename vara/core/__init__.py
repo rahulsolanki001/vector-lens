@@ -16,8 +16,8 @@ from vara.core.diagnose import diagnose_retrieval
 from vara.core.health import health_check
 
 __all__ = [
-    "debug_query",
     "compare_backends",
-    "health_check",
+    "debug_query",
     "diagnose_retrieval",
+    "health_check",
 ]

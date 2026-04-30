@@ -1,0 +1,32 @@
+name: Integration tests
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  integration:
+    name: Integration tests with live DBs
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install dev dependencies
+        run: pip install -e ".[all,dev]"
+
+      - name: Start DB containers
+        run: docker compose -f docker-compose.dev.yml up -d --wait
+
+      - name: Run integration tests
+        run: pytest -m integration -v --tb=short
+
+      - name: Stop DB containers
+        if: always()
+        run: docker compose -f docker-compose.dev.yml down -v

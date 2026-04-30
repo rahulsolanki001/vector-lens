@@ -1,0 +1,65 @@
+name: CI
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+    branches: [main]
+
+jobs:
+  python:
+    name: Python lint + unit tests
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.10", "3.11", "3.12"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+
+      - name: Install dev dependencies
+        run: pip install -e ".[all,dev]"
+
+      - name: Ruff lint
+        run: ruff check vara/ tests/
+
+      - name: Ruff format check
+        run: ruff format --check vara/ tests/
+
+      - name: Mypy
+        run: mypy vara/
+
+      - name: Unit tests
+        run: pytest -m unit -v --tb=short
+
+  ui:
+    name: UI lint + tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: ui/package.json
+
+      - name: Install UI dependencies
+        run: cd ui && npm install
+
+      - name: TypeScript check
+        run: cd ui && npm run type-check
+
+      - name: ESLint
+        run: cd ui && npm run lint
+
+      - name: Vitest
+        run: cd ui && npm run test

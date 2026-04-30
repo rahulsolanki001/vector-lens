@@ -17,10 +17,10 @@ from vara.config.loader import get_adapter_configs, load_config, resolve_adapter
 from vara.config.schema import BackendConfig, VaraConfig, VaraSettings
 
 __all__ = [
-    "load_config",
-    "resolve_adapter_config",
-    "get_adapter_configs",
+    "BackendConfig",
     "VaraConfig",
     "VaraSettings",
-    "BackendConfig",
+    "get_adapter_configs",
+    "load_config",
+    "resolve_adapter_config",
 ]

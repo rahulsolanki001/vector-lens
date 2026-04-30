@@ -1,0 +1,36 @@
+vara:
+  port: 7842
+  open_browser: true
+  log_level: info
+  cors_origins: []
+
+backends:
+  - name: local-qdrant
+    type: qdrant
+    host: localhost
+    port: 6333
+    grpc_port: 6334
+    prefer_grpc: false
+    default_collection: documents
+
+  # Planned adapters. Vara currently validates these types but only Qdrant is
+  # implemented end to end.
+  # - name: prod-pinecone
+  #   type: pinecone
+  #   api_key: ${PINECONE_API_KEY}
+  #   index: documents
+  #   namespace: ""
+
+  # - name: local-pgvector
+  #   type: pgvector
+  #   dsn: postgresql://postgres:postgres@localhost:5432/vara
+  #   table: documents
+  #   vector_column: embedding
+  #   id_column: id
+  #   text_column: text
+
+  # - name: local-milvus
+  #   type: milvus
+  #   host: localhost
+  #   port: 19530
+  #   default_collection: documents

@@ -1,0 +1,29 @@
+{
+  "name": "vara-ui",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "type-check": "tsc --noEmit",
+    "lint": "echo \"UI lint placeholder\"",
+    "test": "vitest run --passWithNoTests"
+  },
+  "dependencies": {
+    "@vitejs/plugin-react": "^4.2.1",
+    "vite": "^5.2.0",
+    "typescript": "^5.4.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "zustand": "^4.5.2",
+    "three": "^0.164.0",
+    "@react-three/fiber": "^8.16.2",
+    "recharts": "^2.12.6"
+  },
+  "devDependencies": {
+    "@types/react": "^18.2.66",
+    "@types/react-dom": "^18.2.22",
+    "vitest": "^1.4.0"
+  }
+}

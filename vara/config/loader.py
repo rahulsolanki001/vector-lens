@@ -17,6 +17,7 @@ from __future__ import annotations
 import os
 import re
 from pathlib import Path
+from typing import Any
 
 import yaml
 
@@ -55,14 +56,14 @@ def _interpolate(value: str) -> str:
     return _ENV_VAR_RE.sub(_replace, value)
 
 
-def _interpolate_dict(data: dict) -> dict:  # type: ignore[type-arg]
+def _interpolate_dict(data: dict[str, Any]) -> dict[str, Any]:
     """
     Recursively walk a parsed YAML dict and interpolate all string values.
 
     Handles nested dicts and lists of any depth.
     Non-string scalar values (int, bool, float, None) are passed through unchanged.
     """
-    result: dict = {}
+    result: dict[str, Any] = {}
     for k, v in data.items():
         if isinstance(v, str):
             result[k] = _interpolate(v)
