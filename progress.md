@@ -1,15 +1,14 @@
 # Vara Progress Tracker
 
-Last updated: 2026-05-01 (evening)
+Last updated: 2026-05-01 (night)
 
 ## Current Status
 
-Vara is in the scaffold-first stage with the backend foundation underway. The
-repository now has an import-clean Python skeleton, Phase 0 project files, the
-Qdrant adapter, config loading, and the first pass of the core debug engine.
-Python dependencies are installed locally and the baseline unit/lint/type checks
-are green. Phase 3 is complete (eval harness). Phase 4 is complete: the
-projection job store and UMAP/t-SNE worker are implemented.
+Vara's Python backend is functionally complete. Phases 0–5 are done: scaffolding,
+Qdrant adapter, config loading, core debug engine, eval harness, projection
+service, and the full FastAPI server with REST routes, WebSocket streaming, and
+CLI commands. The remaining work is the React UI (Phase 6) and packaging
+(Phase 7).
 
 ## Done
 
@@ -34,7 +33,6 @@ projection job store and UMAP/t-SNE worker are implemented.
 Notes:
 
 - Root-level `ci.yml` and `integration.yml` are still present as earlier drafts.
-- CLI commands are still skeleton commands and intentionally raise `NotImplementedError`.
 
 ### Phase 1 - Adapter Layer, Qdrant Complete
 
@@ -65,13 +63,6 @@ Notes:
 | `vara/core/health.py` | `health_check()` and concurrent `health_check_many()` wrapper |
 | `vara/core/diagnose.py` | `diagnose_retrieval()` with heuristic per-document findings |
 
-### Import-Clean Placeholders
-
-| Area | Status |
-|------|--------|
-| `vara/server/` | Minimal FastAPI app factory and 501 route placeholders |
-| `vara/server/websocket/` | Placeholder WebSocket stream handlers |
-
 ### Phase 3 - Eval Harness, Complete
 
 | File | Status |
@@ -92,23 +83,45 @@ Notes:
 | `vara/projection/jobs.py` | `ProjectionParams`, extended `ProjectionJob` (progress, timestamps), async-safe `ProjectionJobStore` with state transitions and fitted-model cache |
 | `vara/projection/worker.py` | `run_projection` async generator — fetches vectors, runs UMAP/t-SNE in thread-pool executor, streams `ProjectionPoint` batches, updates job store; incremental UMAP via `transform()` using `base_job_id` |
 
+### Phase 5 - FastAPI Server, Complete
+
+| File | Status |
+|------|--------|
+| `vara/server/deps.py` | Shared FastAPI dependency helpers: `get_adapters`, `get_job_store`, `get_eval_jobs`, `get_vara_config`, `require_adapter` |
+| `vara/server/app.py` | Lifespan connects all adapters + initialises stores; CORS with extra origins from config; REST routers + WebSocket routes registered; React SPA served from `static/` when present |
+| `vara/server/routes/config.py` | `GET /api/config` — backend names and types |
+| `vara/server/routes/collections.py` | `GET /api/collections` (fan-out, fault-tolerant) + `GET /api/collections/{backend}/{collection}/health` |
+| `vara/server/routes/query.py` | `POST /api/query/debug`, `compare`, `diagnose` — typed request models, calls core engine |
+| `vara/server/routes/eval.py` | `POST /api/eval/run` — loads CSV dataset, starts background task, returns `job_id` immediately |
+| `vara/server/websocket/eval_stream.py` | `WS /ws/eval/{job_id}` — drains asyncio Queue, forwards `EvalProgress` as JSON until sentinel or error |
+| `vara/server/websocket/projection_stream.py` | `WS /ws/projection` — accepts params in first JSON message, creates job, streams `ProjectionPoint` batches, supports incremental `base_job_id` |
+| `vara/cli.py` | `vara serve` (uvicorn + auto browser-open), `vara check` (Rich health table), `vara eval` (CLI eval → JSON file), `vara dev` (uvicorn --reload + Vite subprocess) |
+
 ## Verification
 
 - No empty Python modules remain under `vara/`.
 - Python syntax compilation passed for the `vara/` package with Python 3.11.
 - Project dependencies installed successfully with `pip install -e ".[all,dev]"`.
-- Unit test suite passed: `pytest -m unit -v` -> 24 passed.
+- Unit test suite passed: `pytest -m unit -v` -> 24 passed (pre Phase 3 additions).
 - Ruff passed: `ruff check vara/ tests/`.
 - Mypy passed: `mypy vara/`.
 - Mypy currently prints a harmless note about unused overrides for optional third-party module sections.
+- All Phase 5 server and CLI imports verified clean against project venv.
 
 ## Next Steps
 
-### 1. Server Layer
+### 1. React UI (Phase 6)
 
 Recommended order:
 
-1. `vara/server/app.py` — FastAPI factory, lifespan, CORS, static file serving
-2. `vara/server/routes/` — replace 501 placeholders with real calls into config, adapters, and core
-3. `vara/server/websocket/` — WebSocket handlers for eval progress and projection streaming
-4. CLI commands — `vara serve`, `vara check`, `vara dev`
+1. Layout, routing, and backend/collection selector sidebar
+2. Query Debugger panel — vector input, filter builder, per-backend results, diff view
+3. Index Health panel — findings cards with severity, re-check button
+4. Eval Runner panel — dataset upload, live progress chart, export
+5. Vector Explorer panel — Three.js 3D point cloud, UMAP/t-SNE toggle, incremental updates
+
+### 2. Packaging (Phase 7)
+
+- Build pipeline: `make build-ui` → copy dist → `make build` (wheel with bundled UI)
+- PyPI publish GitHub Action on `v*` tags
+- Documentation

@@ -1,18 +1,42 @@
 """
-Configuration API route placeholders.
+GET /api/config — backend connection status.
 """
 
 from __future__ import annotations
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends
+from pydantic import BaseModel
+
+from vara.adapters.base import VecDBAdapter
+from vara.config.schema import VaraConfig
+from vara.server.deps import get_adapters, get_vara_config
 
 router = APIRouter(tags=["config"])
 
 
-@router.get("/config")
-async def get_config() -> dict[str, str]:
-    """Return configured backend metadata."""
-    raise HTTPException(status_code=501, detail="Config API is planned for Phase 5.")
+class BackendStatus(BaseModel):
+    name: str
+    type: str
+
+
+class ConfigResponse(BaseModel):
+    version: str
+    backends: list[BackendStatus]
+
+
+@router.get("/config", response_model=ConfigResponse)
+async def get_config(
+    adapters: dict[str, VecDBAdapter] = Depends(get_adapters),
+    vara_config: VaraConfig = Depends(get_vara_config),
+) -> ConfigResponse:
+    """Return configured backends and their connection status."""
+    return ConfigResponse(
+        version="0.1.0",
+        backends=[
+            BackendStatus(name=name, type=adapter.backend_type)
+            for name, adapter in adapters.items()
+        ],
+    )
 
 
 __all__ = ["router"]
