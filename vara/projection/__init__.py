@@ -9,6 +9,7 @@ from vara.projection.jobs import (
     ProjectionJob,
     ProjectionJobStatus,
     ProjectionJobStore,
+    ProjectionParams,
     ProjectionPoint,
 )
 from vara.projection.worker import run_projection
@@ -17,6 +18,7 @@ __all__ = [
     "ProjectionJob",
     "ProjectionJobStatus",
     "ProjectionJobStore",
+    "ProjectionParams",
     "ProjectionPoint",
     "run_projection",
 ]

@@ -1,6 +1,6 @@
 # Vara Progress Tracker
 
-Last updated: 2026-05-01
+Last updated: 2026-05-01 (evening)
 
 ## Current Status
 
@@ -8,8 +8,8 @@ Vara is in the scaffold-first stage with the backend foundation underway. The
 repository now has an import-clean Python skeleton, Phase 0 project files, the
 Qdrant adapter, config loading, and the first pass of the core debug engine.
 Python dependencies are installed locally and the baseline unit/lint/type checks
-are green. Phase 3 is complete: retrieval metrics, CSV dataset loading, the
-disk-backed embedding cache, and the async eval runner are all implemented.
+are green. Phase 3 is complete (eval harness). Phase 4 is complete: the
+projection job store and UMAP/t-SNE worker are implemented.
 
 ## Done
 
@@ -69,8 +69,6 @@ Notes:
 
 | Area | Status |
 |------|--------|
-| `vara/eval/` | Placeholder metric, loader, cache, and runner APIs |
-| `vara/projection/` | Placeholder job state and worker APIs |
 | `vara/server/` | Minimal FastAPI app factory and 501 route placeholders |
 | `vara/server/websocket/` | Placeholder WebSocket stream handlers |
 
@@ -87,6 +85,13 @@ Notes:
 | `tests/unit/test_eval_cache.py` | Unit coverage for round-trip, persistence across reopen, overflow, dimension mismatch, and context manager |
 | `tests/unit/test_eval_runner.py` | Unit coverage via fake adapter: event count, metric accumulation, dim truncations, latency tracking, unknown metric error |
 
+### Phase 4 - Projection Service, Complete
+
+| File | Status |
+|------|--------|
+| `vara/projection/jobs.py` | `ProjectionParams`, extended `ProjectionJob` (progress, timestamps), async-safe `ProjectionJobStore` with state transitions and fitted-model cache |
+| `vara/projection/worker.py` | `run_projection` async generator — fetches vectors, runs UMAP/t-SNE in thread-pool executor, streams `ProjectionPoint` batches, updates job store; incremental UMAP via `transform()` using `base_job_id` |
+
 ## Verification
 
 - No empty Python modules remain under `vara/`.
@@ -99,14 +104,11 @@ Notes:
 
 ## Next Steps
 
-### 1. Projection Layer
+### 1. Server Layer
 
 Recommended order:
 
-1. `vara/projection/jobs.py` — job state model and persistence
-2. `vara/projection/worker.py` — async projection worker
-
-### 2. Server Layer
-
-- Implement real `server/app.py` lifespan/config loading.
-- Replace 501 route placeholders with calls into config, adapters, and core.
+1. `vara/server/app.py` — FastAPI factory, lifespan, CORS, static file serving
+2. `vara/server/routes/` — replace 501 placeholders with real calls into config, adapters, and core
+3. `vara/server/websocket/` — WebSocket handlers for eval progress and projection streaming
+4. CLI commands — `vara serve`, `vara check`, `vara dev`
