@@ -1,6 +1,6 @@
 # Vara Progress Tracker
 
-Last updated: 2026-05-01 (night)
+Last updated: 2026-05-01 (night, backend verified)
 
 ## Current Status
 
@@ -107,6 +107,19 @@ Notes:
 - Mypy passed: `mypy vara/`.
 - Mypy currently prints a harmless note about unused overrides for optional third-party module sections.
 - All Phase 5 server and CLI imports verified clean against project venv.
+
+### Live Backend Verification (against real Qdrant, 800k vectors, dim=768)
+
+| Endpoint | Result |
+|----------|--------|
+| `GET /api/config` | ✅ |
+| `GET /api/collections` | ✅ (fixed qdrant-client 1.9 compat: `query_points`, `points_count`, `_extract_vec_params`) |
+| `GET /api/collections/{backend}/{collection}/health` | ✅ |
+| `POST /api/query/debug` | ✅ real hits returned |
+| `POST /api/query/compare` | ✅ correct 404 with single backend |
+| `POST /api/query/diagnose` | ✅ found/not-found paths both exercised |
+| `POST /api/eval/run` + `WS /ws/eval/{job_id}` | ✅ ndcg=0.53, mrr=1.0, recall=0.4, p50=18ms |
+| `WS /ws/projection` | ✅ UMAP 50 vectors → 5 batches of x/y/z coordinates |
 
 ## Next Steps
 
