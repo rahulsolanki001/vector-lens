@@ -381,19 +381,32 @@ class QdrantAdapter(VecDBAdapter):
         t0 = time.perf_counter()
 
         client = cast(Any, self._c)
-        results = await client.search(
-            collection_name=request.collection,
-            query_vector=request.vector,
-            query_filter=qdrant_filter,
-            limit=request.top_k,
-            with_payload=request.with_payload,
-            with_vectors=request.with_vectors,
-        )
+
+        # qdrant-client >= 1.9 removed search() in favour of query_points()
+        if hasattr(client, "query_points"):
+            response = await client.query_points(
+                collection_name=request.collection,
+                query=request.vector,
+                query_filter=qdrant_filter,
+                limit=request.top_k,
+                with_payload=request.with_payload,
+                with_vectors=request.with_vectors,
+            )
+            raw_results = response.points
+        else:
+            raw_results = await client.search(
+                collection_name=request.collection,
+                query_vector=request.vector,
+                query_filter=qdrant_filter,
+                limit=request.top_k,
+                with_payload=request.with_payload,
+                with_vectors=request.with_vectors,
+            )
 
         latency_ms = (time.perf_counter() - t0) * 1000
 
         hits: list[QueryHit] = []
-        for r in results:
+        for r in raw_results:
             hits.append(QueryHit(
                 id=str(r.id),
                 score=r.score,
