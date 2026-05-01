@@ -1,6 +1,6 @@
 # Vara Progress Tracker
 
-Last updated: 2026-04-30
+Last updated: 2026-05-01
 
 ## Current Status
 
@@ -8,8 +8,8 @@ Vara is in the scaffold-first stage with the backend foundation underway. The
 repository now has an import-clean Python skeleton, Phase 0 project files, the
 Qdrant adapter, config loading, and the first pass of the core debug engine.
 Python dependencies are installed locally and the baseline unit/lint/type checks
-are green. Phase 3 has started with retrieval metrics and CSV dataset loading
-implemented and tested.
+are green. Phase 3 is complete: retrieval metrics, CSV dataset loading, the
+disk-backed embedding cache, and the async eval runner are all implemented.
 
 ## Done
 
@@ -74,7 +74,7 @@ Notes:
 | `vara/server/` | Minimal FastAPI app factory and 501 route placeholders |
 | `vara/server/websocket/` | Placeholder WebSocket stream handlers |
 
-### Phase 3 - Eval Harness, Started
+### Phase 3 - Eval Harness, Complete
 
 | File | Status |
 |------|--------|
@@ -82,8 +82,10 @@ Notes:
 | `tests/unit/test_eval_metrics.py` | Unit coverage for ranking metrics, duplicate handling, invalid k, and percentile edge cases |
 | `vara/eval/loaders.py` | Implemented `EvalQuery`, `EvalDataset`, and strict `CSVLoader` requiring query text, vector, and relevant IDs |
 | `tests/unit/test_eval_loaders.py` | Unit coverage for CSV aliases, JSON/delimited values, and validation errors |
-| `vara/eval/cache.py` | Placeholder only |
-| `vara/eval/runner.py` | Placeholder only |
+| `vara/eval/cache.py` | Implemented numpy memmap-backed `EmbeddingCache` with open/close/get/set and context manager |
+| `vara/eval/runner.py` | Implemented async `run_eval` generator streaming `EvalProgress` with running-mean metrics, latency percentiles, and optional dim truncations |
+| `tests/unit/test_eval_cache.py` | Unit coverage for round-trip, persistence across reopen, overflow, dimension mismatch, and context manager |
+| `tests/unit/test_eval_runner.py` | Unit coverage via fake adapter: event count, metric accumulation, dim truncations, latency tracking, unknown metric error |
 
 ## Verification
 
@@ -97,22 +99,14 @@ Notes:
 
 ## Next Steps
 
-### 1. Continue Phase 3 Eval Harness
+### 1. Projection Layer
 
 Recommended order:
 
-1. `vara/eval/cache.py`
-2. `vara/eval/runner.py`
+1. `vara/projection/jobs.py` — job state model and persistence
+2. `vara/projection/worker.py` — async projection worker
 
-The loader contract now requires query text and query vectors, so the runner can
-stay focused on calling backends and aggregating metrics.
+### 2. Server Layer
 
-### 2. Add Tests Alongside Phase 3
-
-- fake-adapter tests for eval runner behavior
-
-### 3. Then Continue Projection And Server Layers
-
-- Implement `projection/jobs.py` before `projection/worker.py`.
 - Implement real `server/app.py` lifespan/config loading.
 - Replace 501 route placeholders with calls into config, adapters, and core.
