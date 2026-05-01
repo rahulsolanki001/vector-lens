@@ -46,6 +46,32 @@ _QDRANT_DISTANCE_MAP: dict[str, str] = {
     "Manhattan": "manhattan",
 }
 
+
+def _extract_vec_params(vec_config: Any) -> tuple[int, str]:
+    """
+    Extract (dimension, distance_metric) from any qdrant-client vector config shape.
+
+    qdrant-client has changed this structure across versions:
+      - <1.7  : VectorsConfig.__root__ is VectorParams or dict[str, VectorParams]
+      - >=1.7 : params.vectors is VectorParams directly or dict[str, VectorParams]
+    """
+    # Named vectors — plain dict or Pydantic model with dict-like iteration
+    if isinstance(vec_config, dict):
+        first = next(iter(vec_config.values()))
+        return _extract_vec_params(first)
+
+    # Pydantic v1 wrapper with __root__ (qdrant-client < 1.7)
+    if hasattr(vec_config, "__root__"):
+        return _extract_vec_params(vec_config.__root__)
+
+    # Direct VectorParams — the common case in 1.7+
+    if hasattr(vec_config, "size") and hasattr(vec_config, "distance"):
+        distance_raw = vec_config.distance
+        distance_str = distance_raw.value if hasattr(distance_raw, "value") else str(distance_raw)
+        return int(vec_config.size), _QDRANT_DISTANCE_MAP.get(distance_str, distance_str)
+
+    raise ValueError(f"Unrecognised qdrant vector config type: {type(vec_config)}")
+
 # ── Filter translation ────────────────────────────────────────────────────────
 
 def _translate_filter(filters: dict[str, Any] | None) -> qmodels.Filter | None:
@@ -238,37 +264,31 @@ class QdrantAdapter(VecDBAdapter):
         for col in response.collections:
             try:
                 info: Any = await self._c.get_collection(col.name)
-                config: Any = info.config
-                vec_config: Any = config.params.vectors
+                vec_config: Any = info.config.params.vectors
+                dimension, distance = _extract_vec_params(vec_config)
 
-                # vectors config can be a single VectorsConfig or a named dict
-                if isinstance(vec_config, dict):
-                    # Named vectors — take the first for dimension display
-                    first = next(iter(vec_config.values()))
-                    dimension = first.size
-                    distance = _QDRANT_DISTANCE_MAP.get(
-                        first.distance.value, first.distance.value
-                    )
-                else:
-                    dimension = vec_config.size
-                    distance = _QDRANT_DISTANCE_MAP.get(
-                        vec_config.distance.value, vec_config.distance.value
-                    )
+                # vectors_count deprecated in Qdrant 1.9+; fall back to points_count
+                vector_count = (
+                    getattr(info, "points_count", None)
+                    or getattr(info, "vectors_count", None)
+                    or 0
+                )
 
                 result.append(CollectionInfo(
                     name=col.name,
-                    vector_count=info.vectors_count or 0,
+                    vector_count=vector_count,
                     dimension=dimension,
                     distance_metric=distance,
                     backend_name=self.name,
                 ))
-            except Exception:
-                # Don't let a single bad collection break the whole list
+            except Exception as exc:
+                # Don't let a single bad collection break the whole list;
+                # surface the reason in distance_metric so it's visible in the UI
                 result.append(CollectionInfo(
                     name=col.name,
                     vector_count=0,
                     dimension=0,
-                    distance_metric="unknown",
+                    distance_metric=f"error: {exc}",
                     backend_name=self.name,
                 ))
 
@@ -279,17 +299,7 @@ class QdrantAdapter(VecDBAdapter):
         info: Any = await self._c.get_collection(collection)
         config: Any = info.config
         vec_config: Any = config.params.vectors
-
-        # Resolve dimension + distance
-        if isinstance(vec_config, dict):
-            first = next(iter(vec_config.values()))
-            dimension = first.size
-            distance = _QDRANT_DISTANCE_MAP.get(first.distance.value, first.distance.value)
-        else:
-            dimension = vec_config.size
-            distance = _QDRANT_DISTANCE_MAP.get(
-                vec_config.distance.value, vec_config.distance.value
-            )
+        dimension, distance = _extract_vec_params(vec_config)
 
         # HNSW params
         hnsw = config.hnsw_config
@@ -320,10 +330,16 @@ class QdrantAdapter(VecDBAdapter):
         except Exception:
             pass
 
+        vector_count = (
+            getattr(info, "points_count", None)
+            or getattr(info, "vectors_count", None)
+            or 0
+        )
+
         return CollectionStats(
             name=collection,
             backend_name=self.name,
-            vector_count=info.vectors_count or 0,
+            vector_count=vector_count,
             dimension=dimension,
             distance_metric=distance,
             disk_bytes=getattr(info, "disk_data_size", None),
