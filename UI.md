@@ -2,17 +2,17 @@
 
 ## Stack
 
-| Concern | Choice | Reason |
+| Concern | Choice | Status |
 |---------|--------|--------|
-| Framework | React 18 + TypeScript | Already scaffolded |
-| Build | Vite 5 | Already scaffolded |
-| Styling | Tailwind CSS v3 | Utility-first, easy dark theme, no runtime overhead |
-| Routing | React Router v6 | Panel-per-route, browser back/forward works |
-| State | Zustand | Already scaffolded, extend existing store |
-| Charts | Recharts | Already installed |
-| 3D | @react-three/fiber + Three.js | Already installed |
-| Icons | lucide-react | Clean, consistent, tree-shakeable |
-| WebSocket | Native browser WebSocket | No extra dep needed |
+| Framework | React 18 + TypeScript | ✅ installed |
+| Build | Vite 5 | ✅ installed |
+| Styling | Tailwind CSS v3 | ✅ installed + configured |
+| Routing | React Router v6 (react-router-dom v7) | ✅ installed |
+| State | Zustand | ✅ installed |
+| Charts | Recharts | ✅ installed |
+| 3D | @react-three/fiber v8 + @react-three/drei v9 + Three.js | ✅ installed |
+| Icons | lucide-react | ✅ installed |
+| WebSocket | Native browser WebSocket | no dep needed |
 
 **No component library** — custom components only. Keeps the design coherent and bundle small.
 
@@ -320,17 +320,24 @@ src/components/
 
 ---
 
-## Implementation Order
+## Implementation Progress
 
-1. **Install deps** — `tailwindcss`, `react-router-dom`, `lucide-react`, `@react-three/drei`
-2. **Tailwind config** — extend with design tokens above
-3. **Layout** — TopBar + Sidebar + router shell, backend/collection selector wired to store
-4. **API client** — implement all typed functions in `client.ts`
-5. **Shared components** — Card, Badge, Button, Input, CodeBlock, HitCard, FindingCard, ScoreBar
-6. **IndexHealth panel** — simplest panel, good to validate component primitives
-7. **QueryDebugger panel** — core feature, all three modes
-8. **EvalRunner panel** — WS streaming + Recharts chart
-9. **VectorExplorer panel** — Three.js point cloud + WS streaming
+| Step | Task | Status |
+|------|------|--------|
+| 1 | Install deps (`tailwindcss`, `react-router-dom`, `lucide-react`, `@react-three/drei`) | ✅ done |
+| 2 | Tailwind config + design tokens + `index.css` + font import | ✅ done |
+| 3 | Layout — TopBar + Sidebar + router shell, store wired to backend/collection selector | 🔲 next |
+| 4 | API client — typed functions + WS helpers in `client.ts`, `types.ts` | 🔲 |
+| 5 | Shared components — Card, Badge, Button, Input, CodeBlock, HitCard, FindingCard, ScoreBar | 🔲 |
+| 6 | IndexHealth panel | 🔲 |
+| 7 | QueryDebugger panel (debug + compare + diagnose modes) | 🔲 |
+| 8 | EvalRunner panel (WS streaming + Recharts chart) | 🔲 |
+| 9 | VectorExplorer panel (Three.js point cloud + WS streaming) | 🔲 |
+
+### Step 1–2 Notes
+- Pinned `@react-three/drei@^9` (not v10) — fiber v8 requires React 18; drei v10 requires fiber v9 + React 19
+- Tailwind color keys: `bg-*`, `accent-*`, `tx-*`, `sev-*` (not `text-*`/`severity-*` to avoid conflicts)
+- Google Fonts loaded in `index.css`: Inter (400/500/600) + JetBrains Mono (400/500)
 
 ---
 

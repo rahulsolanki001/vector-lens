@@ -1,6 +1,6 @@
 # Vara Progress Tracker
 
-Last updated: 2026-05-02 (pgvector live-verified)
+Last updated: 2026-05-02 (Phase 6 started — UI deps + Tailwind)
 
 ## Current Status
 
@@ -137,15 +137,21 @@ Notes:
 
 **Note:** Jaccard=0.0 with random query vectors is expected behaviour — random 768-dim queries hit a flat cosine similarity landscape where ANN indexes diverge. Verified correct with real stored vectors.
 
-### 1. React UI (Phase 6)
+### Phase 6 - React UI (In Progress)
 
-Recommended order:
+Theme: dark + indigo-violet. Full design spec in `UI.md`.
 
-1. Layout, routing, and backend/collection selector sidebar
-2. Query Debugger panel — vector input, filter builder, per-backend results, diff view
-3. Index Health panel — findings cards with severity, re-check button
-4. Eval Runner panel — dataset upload, live progress chart, export
-5. Vector Explorer panel — Three.js 3D point cloud, UMAP/t-SNE toggle, incremental updates
+| Step | Task | Status |
+|------|------|--------|
+| 1 | Deps: tailwindcss, react-router-dom, lucide-react, @react-three/drei | ✅ |
+| 2 | Tailwind config, design tokens, index.css, font import | ✅ |
+| 3 | Layout — TopBar + Sidebar + router shell | 🔲 next |
+| 4 | API client + TypeScript types | 🔲 |
+| 5 | Shared components | 🔲 |
+| 6 | IndexHealth panel | 🔲 |
+| 7 | QueryDebugger panel | 🔲 |
+| 8 | EvalRunner panel | 🔲 |
+| 9 | VectorExplorer panel | 🔲 |
 
 ### 2. Packaging (Phase 7)
 
