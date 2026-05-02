@@ -64,12 +64,13 @@ async def run_projection(
         if fitted_model is not None:
             store.store_model(job_id, fitted_model)
 
+        has_z = coords.shape[1] > 2
         all_points = [
             ProjectionPoint(
                 id=records[i].id,
                 x=float(coords[i, 0]),
                 y=float(coords[i, 1]),
-                z=float(coords[i, 2]),
+                z=float(coords[i, 2]) if has_z else 0.0,
                 payload=records[i].payload,
             )
             for i in range(len(records))
@@ -128,7 +129,7 @@ def _run_umap(
         return existing_model.transform(matrix), existing_model
 
     model = umap_lib.UMAP(
-        n_components=3,
+        n_components=params.n_components,
         n_neighbors=params.n_neighbors,
         min_dist=params.min_dist,
         metric=params.metric,
@@ -148,9 +149,11 @@ def _run_tsne(
             "Install it with: pip install vara[projection]"
         ) from exc
 
+    n_samples = matrix.shape[0]
+    perplexity = min(params.perplexity, n_samples - 1)
     model = TSNE(
-        n_components=3,
-        perplexity=params.perplexity,
+        n_components=params.n_components,
+        perplexity=max(1.0, perplexity),
         max_iter=params.n_iter,
     )
     return model.fit_transform(matrix), None

@@ -28,6 +28,7 @@ class ProjectionParams(BaseModel):
     """Algorithm selection and tuning knobs for a projection run."""
 
     algorithm: str = "umap"          # "umap" | "tsne"
+    n_components: int = 3            # 2 or 3 — output dimensionality
 
     # UMAP params
     n_neighbors: int = 15

@@ -78,6 +78,7 @@ async def stream_projection_job(
 
     params = ProjectionParams(
         algorithm=raw.get("algorithm", "umap"),
+        n_components=raw.get("n_components", 3),
         n_neighbors=raw.get("n_neighbors", 15),
         min_dist=raw.get("min_dist", 0.1),
         metric=raw.get("metric", "cosine"),

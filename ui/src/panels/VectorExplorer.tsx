@@ -106,6 +106,7 @@ interface PointCloudProps {
   onHover: (id: string | null, pos: [number, number] | null) => void;
   onSelect: (id: string | null) => void;
   autoRotate: boolean;
+  is2D: boolean;
 }
 
 function PointCloud({
@@ -116,6 +117,7 @@ function PointCloud({
   onHover,
   onSelect,
   autoRotate,
+  is2D,
 }: PointCloudProps) {
   const { camera, gl } = useThree();
   const prevHoveredRef = useRef<string | null>(null);
@@ -240,8 +242,9 @@ function PointCloud({
     <>
       <OrbitControls
         makeDefault
-        autoRotate={autoRotate}
+        autoRotate={autoRotate && !is2D}
         autoRotateSpeed={0.6}
+        enableRotate={!is2D}
       />
       <primitive object={mainMesh} onClick={(e: { stopPropagation: () => void }) => {
         e.stopPropagation();
@@ -357,16 +360,18 @@ function ColorLegend({
 function HUD({
   count,
   algorithm,
+  viewMode,
   elapsedMs,
 }: {
   count: number;
   algorithm: string;
+  viewMode: "2d" | "3d";
   elapsedMs: number | null;
 }) {
   return (
     <div className="absolute top-4 right-4 bg-bg-surface/80 border border-bg-border rounded-lg px-3 py-2 text-xs backdrop-blur-sm z-10 flex flex-col gap-0.5 text-right">
       <span className="text-tx-secondary font-mono">{count} points</span>
-      <span className="text-tx-muted">{algorithm.toUpperCase()}</span>
+      <span className="text-tx-muted">{algorithm.toUpperCase()} · {viewMode.toUpperCase()}</span>
       {elapsedMs != null && (
         <span className="text-tx-muted">{(elapsedMs / 1000).toFixed(1)}s</span>
       )}
@@ -383,6 +388,7 @@ export function VectorExplorer() {
   const [idsText,      setIdsText]      = useState("");
   const [backendName,  setBackendName]  = useState(backends[0]?.name ?? "");
   const [algorithm,    setAlgorithm]    = useState<"umap" | "tsne">("umap");
+  const [viewMode,     setViewMode]     = useState<"3d" | "2d">("3d");
   const [nNeighbors,   setNNeighbors]   = useState("15");
   const [minDist,      setMinDist]      = useState("0.1");
   const [colorByField, setColorByField] = useState("tenant_id");
@@ -480,12 +486,13 @@ export function VectorExplorer() {
 
       const close = connectProjectionWS(
         {
-          collection:  collectionName,
-          backend:     backendName,
+          collection:   collectionName,
+          backend:      backendName,
           ids,
           algorithm,
-          n_neighbors: Number(nNeighbors),
-          min_dist:    Number(minDist),
+          n_components: viewMode === "2d" ? 2 : 3,
+          n_neighbors:  Number(nNeighbors),
+          min_dist:     Number(minDist),
           ...(baseJobId ? { base_job_id: baseJobId } : {}),
         },
         (jid)  => setJobId(jid),
@@ -507,7 +514,7 @@ export function VectorExplorer() {
       );
       closeWS.current = close;
     },
-    [idsText, collectionName, backendName, algorithm, nNeighbors, minDist],
+    [idsText, collectionName, backendName, algorithm, viewMode, nNeighbors, minDist],
   );
 
   const addMore = useCallback(() => {
@@ -558,6 +565,33 @@ export function VectorExplorer() {
                 onChange={(e) => setAlgorithm(e.target.value as "umap" | "tsne")}
                 disabled={status === "running"}
               />
+            </div>
+            <div className="w-28 shrink-0">
+              <span className="text-xs text-tx-secondary block mb-1">Dimensions</span>
+              <div className="flex gap-0.5 p-0.5 bg-bg-raised rounded-md">
+                {(["3d", "2d"] as const).map((m) => (
+                  <button
+                    key={m}
+                    disabled={status === "running"}
+                    onClick={() => {
+                      if (m !== viewMode) {
+                        setViewMode(m);
+                        setRawPoints([]);
+                        setStatus("idle");
+                        setJobId(null);
+                        setSelectedId(null);
+                      }
+                    }}
+                    className={`flex-1 py-1 text-xs rounded font-medium transition-colors ${
+                      viewMode === m
+                        ? "bg-accent text-white"
+                        : "text-tx-secondary hover:text-tx-primary disabled:opacity-40"
+                    }`}
+                  >
+                    {m.toUpperCase()}
+                  </button>
+                ))}
+              </div>
             </div>
             <div className="w-28 shrink-0">
               <Input
@@ -656,6 +690,7 @@ export function VectorExplorer() {
                 onHover={handleHover}
                 onSelect={setSelectedId}
                 autoRotate={autoRotate}
+                is2D={viewMode === "2d"}
               />
               <EffectComposer>
                 <Bloom
@@ -670,6 +705,7 @@ export function VectorExplorer() {
             <HUD
               count={normPoints.length}
               algorithm={algorithm}
+              viewMode={viewMode}
               elapsedMs={elapsedMs}
             />
             <ColorLegend groupMap={groupColorMap} colorByField={colorByField} />

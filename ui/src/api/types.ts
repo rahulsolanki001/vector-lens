@@ -184,6 +184,7 @@ export interface ProjectionParams {
   backend: string;
   ids: string[];
   algorithm?: "umap" | "tsne";
+  n_components?: number;
   n_neighbors?: number;
   min_dist?: number;
   metric?: string;
