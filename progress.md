@@ -1,14 +1,13 @@
 # Vara Progress Tracker
 
-Last updated: 2026-05-02 (Phase 6 complete)
+Last updated: 2026-05-02 (Phase 6 complete + post-launch improvements)
 
 ## Current Status
 
-Vara's Python backend is functionally complete. Phases 0–5 are done: scaffolding,
-Qdrant adapter, config loading, core debug engine, eval harness, projection
-service, and the full FastAPI server with REST routes, WebSocket streaming, and
-CLI commands. The remaining work is the React UI (Phase 6) and packaging
-(Phase 7).
+Vara's Python backend and React UI are both functionally complete. Phases 0–6
+are done. Post-launch improvements have been made to the VectorExplorer panel:
+2D/3D projection toggle, HDBSCAN clustering, and t-SNE perplexity auto-clamping.
+The remaining work is packaging (Phase 7).
 
 ## Done
 
@@ -137,7 +136,7 @@ Notes:
 
 **Note:** Jaccard=0.0 with random query vectors is expected behaviour — random 768-dim queries hit a flat cosine similarity landscape where ANN indexes diverge. Verified correct with real stored vectors.
 
-### Phase 6 - React UI (In Progress)
+### Phase 6 - React UI (Complete)
 
 Theme: dark + indigo-violet. Full design spec in `UI.md`.
 
@@ -151,9 +150,18 @@ Theme: dark + indigo-violet. Full design spec in `UI.md`.
 | 6 | IndexHealth panel | ✅ |
 | 7 | QueryDebugger panel | ✅ |
 | 8 | EvalRunner panel | ✅ |
-| 9 | VectorExplorer panel | ✅ |
+| 9 | VectorExplorer panel (Three.js point cloud + WS streaming) | ✅ |
+| 10 | VectorExplorer enhancements — bloom, payload coloring, click-select, neighbour lines, auto-rotate, HUD, color legend | ✅ |
+| 11 | VectorExplorer — 2D/3D projection toggle (`n_components` wired backend → frontend) | ✅ |
+| 12 | VectorExplorer — HDBSCAN clustering (`POST /api/projection/{job_id}/cluster`, color-mode toggle, noise points) | ✅ |
 
-### 2. Packaging (Phase 7)
+### Post-launch Fixes
+
+| Fix | Status |
+|-----|--------|
+| t-SNE perplexity auto-clamped to `max(1, min(perplexity, n_samples - 1))` — prevents crash on small point sets | ✅ |
+
+### Phase 7 - Packaging
 
 - Build pipeline: `make build-ui` → copy dist → `make build` (wheel with bundled UI)
 - PyPI publish GitHub Action on `v*` tags
