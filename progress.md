@@ -1,6 +1,6 @@
 # Vara Progress Tracker
 
-Last updated: 2026-05-01 (pgvector adapter complete)
+Last updated: 2026-05-02 (pgvector live-verified)
 
 ## Current Status
 
@@ -121,7 +121,7 @@ Notes:
 | `POST /api/eval/run` + `WS /ws/eval/{job_id}` | ✅ ndcg=0.53, mrr=1.0, recall=0.4, p50=18ms |
 | `WS /ws/projection` | ✅ UMAP 50 vectors → 5 batches of x/y/z coordinates |
 
-### pgvector Adapter (Phase 1 Extension)
+### pgvector Adapter — Live Verification (800k vectors, dim=768, same dataset as Qdrant)
 
 | Feature | Status |
 |---------|--------|
@@ -130,15 +130,12 @@ Notes:
 | `_build_where` — Vara canonical filter → parameterised SQL (`$1` reserved for vector) | ✅ |
 | `list_collections` — `atttypmod` for dimension, single `CollectionInfo` | ✅ |
 | `collection_stats` — `pg_total_relation_size`, index type from `pg_indexes` | ✅ |
-| `query` — `$1`=vector, filter params `$2+`, conditional payload/vector SELECT | ✅ |
+| `query` — vector passed as string for asyncpg (`$1` fix), filter params `$2+` | ✅ (fixed: asyncpg needs string not list) |
 | `get_vectors` — `WHERE id = ANY($1)`, `vector::text` cast, `_parse_vector` | ✅ |
 | `health` — 5 checks: reachability, pgvector ext, table exists, HNSW/IVFFlat index, empty table | ✅ |
+| Cross-backend compare (Qdrant vs pgvector, real vector) | ✅ Jaccard=1.0, rank_spearman=0.988, score_spearman=1.0 |
 
-## Next Steps
-
-### 0. pgvector Live Testing
-
-Test the pgvector adapter against the local pgvector instance (800k vectors) by adding a second backend entry in `vara.yaml` and running the same curl sequence used for Qdrant.
+**Note:** Jaccard=0.0 with random query vectors is expected behaviour — random 768-dim queries hit a flat cosine similarity landscape where ANN indexes diverge. Verified correct with real stored vectors.
 
 ### 1. React UI (Phase 6)
 

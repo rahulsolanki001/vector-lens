@@ -303,8 +303,9 @@ class PgvectorAdapter(VecDBAdapter):
         txt_col = self._config.text_column
         metric = self._distance_metric
 
-        # $1 is always the query vector; filter params start at $2
-        filter_params: list[Any] = [request.vector]
+        # $1 is always the query vector; asyncpg needs it as a string for pgvector
+        vec_str = "[" + ",".join(str(x) for x in request.vector) + "]"
+        filter_params: list[Any] = [vec_str]
         where = ""
         if request.filters:
             where_fragment = _build_where(request.filters, filter_params)
