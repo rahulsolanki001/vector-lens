@@ -328,8 +328,8 @@ src/components/
 | 2 | Tailwind config + design tokens + `index.css` + font import | ✅ done |
 | 3 | Layout — TopBar + Sidebar + router shell, store wired to backend/collection selector | ✅ done |
 | 4 | API client — typed functions + WS helpers in `client.ts`, `types.ts` | ✅ done |
-| 5 | Shared components — Card, Badge, Button, Input, CodeBlock, HitCard, FindingCard, ScoreBar | 🔲 next |
-| 6 | IndexHealth panel | 🔲 |
+| 5 | Shared components — Card, Badge, Button, Input, CodeBlock, HitCard, FindingCard, ScoreBar | ✅ done |
+| 6 | IndexHealth panel | 🔲 next |
 | 7 | QueryDebugger panel (debug + compare + diagnose modes) | 🔲 |
 | 8 | EvalRunner panel (WS streaming + Recharts chart) | 🔲 |
 | 9 | VectorExplorer panel (Three.js point cloud + WS streaming) | 🔲 |
@@ -342,6 +342,7 @@ src/components/
 - Step 3 files: `Layout.tsx`, `TopBar.tsx`, `Sidebar.tsx`, updated `App.tsx`, `store/index.ts`
 - Step 4 files: `api/types.ts` (13 interface groups), `api/client.ts` (all REST + 2 WS helpers)
 - WS helpers return a teardown `() => void` — callers close on unmount or completion
+- Step 5 files: `components/ui/` — Card, Badge, Button, Input (+ Textarea + Select), Spinner, EmptyState, CodeBlock, ScoreBar; `components/data/` — HitCard (rank + score bar + collapsible payload, common/unique highlight), FindingCard (severity icon + badge + code + message + recommendation)
 
 ---
 

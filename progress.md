@@ -1,6 +1,6 @@
 # Vara Progress Tracker
 
-Last updated: 2026-05-02 (Phase 6 steps 1–4 done)
+Last updated: 2026-05-02 (Phase 6 steps 1–5 done)
 
 ## Current Status
 
@@ -147,8 +147,8 @@ Theme: dark + indigo-violet. Full design spec in `UI.md`.
 | 2 | Tailwind config, design tokens, index.css, font import | ✅ |
 | 3 | Layout — TopBar + Sidebar + router shell | ✅ |
 | 4 | API client + TypeScript types | ✅ |
-| 5 | Shared components | 🔲 next |
-| 6 | IndexHealth panel | 🔲 |
+| 5 | Shared components | ✅ |
+| 6 | IndexHealth panel | 🔲 next |
 | 7 | QueryDebugger panel | 🔲 |
 | 8 | EvalRunner panel | 🔲 |
 | 9 | VectorExplorer panel | 🔲 |
