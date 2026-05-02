@@ -292,16 +292,22 @@ src/components/
 ```
 ┌─ Controls ─────────────────────────────────────────────┐
 │  IDs (comma-sep) [_______]  algo [UMAP|t-SNE]          │
-│  n_neighbors [10]  min_dist [0.1]  [Project]           │
+│  n_neighbors [10]  min_dist [0.1]  color-by [field]    │
+│  [Project]  [Add More IDs]                              │
 └────────────────────────────────────────────────────────┘
 ┌─ 3D Canvas (fills remaining height) ──────────────────┐
 │                                                         │
-│   @react-three/fiber point cloud                        │
-│   - orbit controls (mouse drag to rotate)               │
-│   - points colored by backend or cluster                │
-│   - hover tooltip: id, score, payload snippet           │
+│   Bloom/glow post-processing (EffectComposer)           │
+│   Points colored by payload field (palette per group)   │
+│   Auto-rotate when idle, stops on user drag             │
+│   Click to select → side detail panel                   │
+│   Hover → K nearest-neighbour lines in projected space  │
+│   HUD overlay: point count, algorithm, elapsed time     │
 │                                                         │
-└─ [job progress bar while streaming] ───────────────────┘
+│  ┌─ Selected point drawer (right side, slide-in) ─────┐ │
+│  │  ID (mono)  payload fields  [Deselect]             │ │
+│  └────────────────────────────────────────────────────┘ │
+└─ Color legend (bottom-left)  ─ progress bar ───────────┘
 ```
 
 **State (local):**
@@ -310,13 +316,22 @@ src/components/
 - `points: ProjectionPoint[]` — accumulated from WS batches
 - `status: 'idle' | 'running' | 'complete' | 'error'`
 - `hoveredId: string | null`
+- `selectedId: string | null` — clicked/locked point
+- `colorByField: string` — payload field used for group coloring
+- `groupColorMap: Record<string, string>` — derived palette per unique field value
 
 **Key UX details:**
-- Three.js `Points` geometry rebuilt on each WS batch (incremental render)
-- OrbitControls from `@react-three/drei` for pan/rotate/zoom
-- Point color: accent indigo by default, red for any ID that appeared in a diagnose result
-- Hover: raycaster picks nearest point, shows tooltip with id + payload
-- "Add more IDs" button triggers incremental projection via `base_job_id`
+- Geometry: fully imperative `THREE.Points` via `<primitive>`, coordinates normalised to `[-2, 2]` cube; camera auto-fit to bounding sphere on first render
+- OrbitControls for pan/rotate/zoom; auto-rotate (`autoRotate`) when idle, paused on pointer-down
+- **Bloom**: `@react-three/postprocessing` `EffectComposer` + `Bloom` pass — points glow with luminanceThreshold tuned to accent colors
+- **Payload coloring**: derive unique values of `colorByField` from loaded points, assign a color from a fixed palette (indigo, emerald, amber, sky, rose, violet…); fallback to accent indigo if field absent
+- **Color legend**: bottom-left overlay listing group → color swatches
+- **Hover**: raycaster picks nearest point, shows tooltip (id + 3 payload fields); draws `THREE.LineSegments` to K=5 nearest neighbours in projected space
+- **Click to select**: locks point, slides in right-side detail panel with full payload; selected point rendered larger + white ring
+- **HUD**: top-right corner overlay — point count, algorithm name, projection elapsed time
+- **"Add more IDs"** button triggers incremental projection via `base_job_id`
+
+**New dependency:** `@react-three/postprocessing` (wraps `postprocessing` library, compatible with fiber v8)
 
 ---
 
@@ -329,10 +344,11 @@ src/components/
 | 3 | Layout — TopBar + Sidebar + router shell, store wired to backend/collection selector | ✅ done |
 | 4 | API client — typed functions + WS helpers in `client.ts`, `types.ts` | ✅ done |
 | 5 | Shared components — Card, Badge, Button, Input, CodeBlock, HitCard, FindingCard, ScoreBar | ✅ done |
-| 6 | IndexHealth panel | 🔲 next |
-| 7 | QueryDebugger panel (debug + compare + diagnose modes) | 🔲 |
-| 8 | EvalRunner panel (WS streaming + Recharts chart) | 🔲 |
-| 9 | VectorExplorer panel (Three.js point cloud + WS streaming) | 🔲 |
+| 6 | IndexHealth panel | ✅ done |
+| 7 | QueryDebugger panel (debug + compare + diagnose modes) | ✅ done |
+| 8 | EvalRunner panel (WS streaming + Recharts chart) | ✅ done |
+| 9 | VectorExplorer panel (Three.js point cloud + WS streaming) | ✅ done |
+| 10 | VectorExplorer enhancements — bloom, payload coloring, click-select, neighbour lines | 🔲 next |
 
 ### Notes
 - Pinned `@react-three/drei@^9` (not v10) — fiber v8 requires React 18; drei v10 requires fiber v9 + React 19
@@ -343,6 +359,9 @@ src/components/
 - Step 4 files: `api/types.ts` (13 interface groups), `api/client.ts` (all REST + 2 WS helpers)
 - WS helpers return a teardown `() => void` — callers close on unmount or completion
 - Step 5 files: `components/ui/` — Card, Badge, Button, Input (+ Textarea + Select), Spinner, EmptyState, CodeBlock, ScoreBar; `components/data/` — HitCard (rank + score bar + collapsible payload, common/unique highlight), FindingCard (severity icon + badge + code + message + recommendation)
+- Steps 6–9: all panels complete and verified against live Qdrant + pgvector backends
+- VectorExplorer geometry: fully imperative `primitive` approach with coordinate normalisation; declarative `bufferAttribute args` does not update in r3f v8
+- Step 10 planned: bloom post-processing (`@react-three/postprocessing`), payload-field color grouping, click-to-select side panel, K nearest-neighbour hover lines, auto-rotate, HUD overlay, color legend
 
 ---
 

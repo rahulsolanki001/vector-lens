@@ -1,8 +1,9 @@
 import { useState, useRef, useCallback, useMemo, useEffect } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { OrbitControls } from "@react-three/drei";
+import { EffectComposer, Bloom } from "@react-three/postprocessing";
 import * as THREE from "three";
-import { Play, Plus } from "lucide-react";
+import { Play, Plus, X } from "lucide-react";
 import type { ProjectionPoint } from "../api/types";
 import { connectProjectionWS } from "../api/client";
 import { useVaraStore } from "../store";
@@ -16,6 +17,57 @@ import { EmptyState } from "../components/ui/EmptyState";
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 type Status = "idle" | "running" | "complete" | "error";
+
+// ── Color palette for payload groups ─────────────────────────────────────────
+
+const GROUP_PALETTE = [
+  "#7C6AF7", // accent indigo
+  "#34D399", // emerald
+  "#FBBF24", // amber
+  "#60A5FA", // sky
+  "#F472B6", // pink
+  "#A78BFA", // violet
+  "#FB923C", // orange
+  "#2DD4BF", // teal
+  "#E879F9", // fuchsia
+  "#94A3B8", // slate
+];
+
+function buildGroupColorMap(
+  points: ProjectionPoint[],
+  field: string,
+): Record<string, string> {
+  const values = Array.from(
+    new Set(points.map((p) => String(p.payload?.[field] ?? "—"))),
+  );
+  const map: Record<string, string> = {};
+  values.forEach((v, i) => {
+    map[v] = GROUP_PALETTE[i % GROUP_PALETTE.length];
+  });
+  return map;
+}
+
+// ── Nearest neighbours in projected (normalised) space ───────────────────────
+
+function kNearest(
+  pts: { x: number; y: number; z: number }[],
+  idx: number,
+  k: number,
+): number[] {
+  const target = pts[idx];
+  return pts
+    .map((p, i) => ({
+      i,
+      d:
+        (p.x - target.x) ** 2 +
+        (p.y - target.y) ** 2 +
+        (p.z - target.z) ** 2,
+    }))
+    .filter(({ i }) => i !== idx)
+    .sort((a, b) => a.d - b.d)
+    .slice(0, k)
+    .map(({ i }) => i);
+}
 
 // ── Progress bar ──────────────────────────────────────────────────────────────
 
@@ -36,53 +88,61 @@ function ProgressBar({ value, max }: { value: number; max: number }) {
   );
 }
 
-// ── Point cloud (Three.js) ────────────────────────────────────────────────────
+// ── Point cloud ───────────────────────────────────────────────────────────────
 
-const ACCENT_COLOR  = new THREE.Color("#7C6AF7");
-const HOVERED_COLOR = new THREE.Color("#F87171");
-
-interface PointCloudProps {
-  points: ProjectionPoint[];
-  hoveredId: string | null;
-  onHover: (id: string | null, pos: [number, number] | null) => void;
+interface NormPoint {
+  id: string;
+  x: number;
+  y: number;
+  z: number;
+  payload: Record<string, unknown>;
 }
 
-function PointCloud({ points, hoveredId, onHover }: PointCloudProps) {
+interface PointCloudProps {
+  points: NormPoint[];
+  hoveredId: string | null;
+  selectedId: string | null;
+  colorMap: Record<string, string>; // id → hex color
+  onHover: (id: string | null, pos: [number, number] | null) => void;
+  onSelect: (id: string | null) => void;
+  autoRotate: boolean;
+}
+
+function PointCloud({
+  points,
+  hoveredId,
+  selectedId,
+  colorMap,
+  onHover,
+  onSelect,
+  autoRotate,
+}: PointCloudProps) {
   const { camera, gl } = useThree();
   const prevHoveredRef = useRef<string | null>(null);
   const fittedRef      = useRef(false);
 
-  // Normalise coordinates to a [-2, 2] cube so the fixed camera always sees them
-  const { threePoints, ids } = useMemo(() => {
-    if (points.length === 0) return { threePoints: null, ids: [] };
-
-    const xs = points.map((p) => p.x);
-    const ys = points.map((p) => p.y);
-    const zs = points.map((p) => p.z);
-    const cx = (Math.min(...xs) + Math.max(...xs)) / 2;
-    const cy = (Math.min(...ys) + Math.max(...ys)) / 2;
-    const cz = (Math.min(...zs) + Math.max(...zs)) / 2;
-    const span = Math.max(
-      Math.max(...xs) - Math.min(...xs),
-      Math.max(...ys) - Math.min(...ys),
-      Math.max(...zs) - Math.min(...zs),
-      0.001,
-    );
-    const scale = 4 / span;
+  // Build main points mesh
+  const { mainMesh, normPositions, ids } = useMemo(() => {
+    if (points.length === 0)
+      return { mainMesh: null, normPositions: [] as NormPoint[], ids: [] as string[] };
 
     const positions = new Float32Array(points.length * 3);
     const colors    = new Float32Array(points.length * 3);
     const ids: string[] = [];
 
     points.forEach((p, i) => {
-      positions[i * 3]     = (p.x - cx) * scale;
-      positions[i * 3 + 1] = (p.y - cy) * scale;
-      positions[i * 3 + 2] = (p.z - cz) * scale;
+      positions[i * 3]     = p.x;
+      positions[i * 3 + 1] = p.y;
+      positions[i * 3 + 2] = p.z;
 
-      const c = p.id === hoveredId ? HOVERED_COLOR : ACCENT_COLOR;
-      colors[i * 3]     = c.r;
-      colors[i * 3 + 1] = c.g;
-      colors[i * 3 + 2] = c.b;
+      const hex = colorMap[p.id] ?? GROUP_PALETTE[0];
+      const col = new THREE.Color(hex);
+      // Brighten hovered / selected
+      const brightness =
+        p.id === selectedId ? 2.5 : p.id === hoveredId ? 1.8 : 1.0;
+      colors[i * 3]     = col.r * brightness;
+      colors[i * 3 + 1] = col.g * brightness;
+      colors[i * 3 + 2] = col.b * brightness;
 
       ids.push(p.id);
     });
@@ -93,41 +153,73 @@ function PointCloud({ points, hoveredId, onHover }: PointCloudProps) {
     geo.computeBoundingSphere();
 
     const mat = new THREE.PointsMaterial({
-      size: 0.1,
+      size: 0.12,
       vertexColors: true,
       sizeAttenuation: true,
       transparent: true,
-      opacity: 0.9,
+      opacity: 0.95,
     });
 
-    return { threePoints: new THREE.Points(geo, mat), ids };
-  }, [points, hoveredId]);
+    return {
+      mainMesh: new THREE.Points(geo, mat),
+      normPositions: points,
+      ids,
+    };
+  }, [points, hoveredId, selectedId, colorMap]);
 
-  // Reset camera fit flag when new projection starts
-  useEffect(() => {
-    fittedRef.current = false;
-  }, [points.length === 0 ? 0 : 1]);
+  // Build neighbour lines for hovered point
+  const neighbourLines = useMemo(() => {
+    if (!hoveredId || normPositions.length < 2) return null;
+    const idx = normPositions.findIndex((p) => p.id === hoveredId);
+    if (idx < 0) return null;
 
-  // Fit camera to bounding sphere on first render
+    const neighbours = kNearest(normPositions, idx, Math.min(5, normPositions.length - 1));
+    const verts: number[] = [];
+    const src = normPositions[idx];
+    neighbours.forEach((ni) => {
+      const dst = normPositions[ni];
+      verts.push(src.x, src.y, src.z, dst.x, dst.y, dst.z);
+    });
+
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute(
+      "position",
+      new THREE.BufferAttribute(new Float32Array(verts), 3),
+    );
+    const mat = new THREE.LineBasicMaterial({
+      color: 0xffffff,
+      transparent: true,
+      opacity: 0.25,
+    });
+    return new THREE.LineSegments(geo, mat);
+  }, [hoveredId, normPositions]);
+
+  // Auto-fit camera once
   useEffect(() => {
-    if (fittedRef.current || !threePoints?.geometry.boundingSphere) return;
+    if (fittedRef.current || !mainMesh?.geometry.boundingSphere) return;
     fittedRef.current = true;
-    const sphere = threePoints.geometry.boundingSphere;
-    const cam = camera as THREE.PerspectiveCamera;
-    const dist = (sphere.radius / Math.sin(((cam.fov / 2) * Math.PI) / 180)) * 1.5;
+    const sphere = mainMesh.geometry.boundingSphere!;
+    const cam    = camera as THREE.PerspectiveCamera;
+    const dist   = (sphere.radius / Math.sin(((cam.fov / 2) * Math.PI) / 180)) * 1.5;
     camera.position.set(sphere.center.x, sphere.center.y, sphere.center.z + Math.max(dist, 5));
     camera.lookAt(sphere.center);
-  }, [threePoints, camera]);
+  }, [mainMesh, camera]);
 
-  // Raycaster — only calls onHover when hovered ID changes
+  // Reset fit when points cleared
+  useEffect(() => {
+    if (points.length === 0) fittedRef.current = false;
+  }, [points.length]);
+
+
+  // Raycaster hover + click
   useFrame(({ pointer }) => {
-    if (!threePoints || points.length === 0) return;
+    if (!mainMesh || points.length === 0) return;
     const raycaster = new THREE.Raycaster();
     raycaster.params.Points = { threshold: 0.15 };
     raycaster.setFromCamera(pointer, camera);
-    const intersects = raycaster.intersectObject(threePoints);
-    if (intersects.length > 0) {
-      const idx = intersects[0].index ?? -1;
+    const hits = raycaster.intersectObject(mainMesh);
+    if (hits.length > 0) {
+      const idx = hits[0].index ?? -1;
       if (idx >= 0 && ids[idx] !== prevHoveredRef.current) {
         prevHoveredRef.current = ids[idx];
         const rect = gl.domElement.getBoundingClientRect();
@@ -142,31 +234,141 @@ function PointCloud({ points, hoveredId, onHover }: PointCloudProps) {
     }
   });
 
-  if (!threePoints) return null;
-  return <primitive object={threePoints} />;
-}
-
-// ── Tooltip ───────────────────────────────────────────────────────────────────
-
-interface TooltipProps {
-  point: ProjectionPoint;
-  pos: [number, number];
-}
-
-function Tooltip({ point, pos }: TooltipProps) {
-  const payloadSnippet = Object.entries(point.payload ?? {})
-    .slice(0, 3)
-    .map(([k, v]) => `${k}: ${String(v).slice(0, 40)}`)
-    .join("\n");
+  if (!mainMesh) return null;
 
   return (
+    <>
+      <OrbitControls
+        makeDefault
+        autoRotate={autoRotate}
+        autoRotateSpeed={0.6}
+      />
+      <primitive object={mainMesh} onClick={(e: { stopPropagation: () => void }) => {
+        e.stopPropagation();
+        if (hoveredId) onSelect(hoveredId === selectedId ? null : hoveredId);
+      }} />
+      {neighbourLines && <primitive object={neighbourLines} />}
+    </>
+  );
+}
+
+// ── Hover tooltip ─────────────────────────────────────────────────────────────
+
+function Tooltip({
+  point,
+  pos,
+}: {
+  point: ProjectionPoint;
+  pos: [number, number];
+}) {
+  const entries = Object.entries(point.payload ?? {}).slice(0, 3);
+  return (
     <div
-      className="absolute pointer-events-none z-10 bg-bg-surface border border-bg-border rounded-lg p-2 text-xs shadow-lg max-w-[220px]"
-      style={{ left: pos[0] + 12, top: pos[1] - 8 }}
+      className="absolute pointer-events-none z-20 bg-bg-surface/95 border border-bg-border rounded-lg p-2.5 text-xs shadow-xl max-w-[240px] backdrop-blur-sm"
+      style={{ left: pos[0] + 14, top: pos[1] - 10 }}
     >
-      <p className="font-mono text-tx-code truncate mb-1">{point.id}</p>
-      {payloadSnippet && (
-        <pre className="text-tx-muted whitespace-pre-wrap">{payloadSnippet}</pre>
+      <p className="font-mono text-tx-code truncate mb-1.5">{point.id}</p>
+      {entries.map(([k, v]) => (
+        <div key={k} className="flex gap-1.5">
+          <span className="text-tx-muted shrink-0">{k}:</span>
+          <span className="text-tx-secondary truncate">{String(v)}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ── Selected point side panel ─────────────────────────────────────────────────
+
+function SelectionPanel({
+  point,
+  color,
+  onClose,
+}: {
+  point: ProjectionPoint;
+  color: string;
+  onClose: () => void;
+}) {
+  const entries = Object.entries(point.payload ?? {});
+  return (
+    <div className="absolute right-0 top-0 bottom-0 w-64 bg-bg-surface/95 border-l border-bg-border p-4 flex flex-col gap-3 backdrop-blur-sm z-10 overflow-y-auto">
+      <div className="flex items-center justify-between">
+        <span className="text-xs font-semibold text-tx-primary">Selected Point</span>
+        <button onClick={onClose} className="text-tx-muted hover:text-tx-primary transition-colors">
+          <X size={14} />
+        </button>
+      </div>
+      <div className="flex items-center gap-2">
+        <span
+          className="w-3 h-3 rounded-full shrink-0"
+          style={{ backgroundColor: color, boxShadow: `0 0 6px ${color}` }}
+        />
+        <code className="text-xs font-mono text-tx-code break-all">{point.id}</code>
+      </div>
+      <div className="flex flex-col gap-1.5 pt-2 border-t border-bg-border">
+        {entries.length === 0 && (
+          <p className="text-xs text-tx-muted">No payload fields</p>
+        )}
+        {entries.map(([k, v]) => (
+          <div key={k}>
+            <p className="text-xs text-tx-muted">{k}</p>
+            <p className="text-xs text-tx-secondary break-all">{String(v)}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ── Color legend ──────────────────────────────────────────────────────────────
+
+function ColorLegend({
+  groupMap,
+  colorByField,
+}: {
+  groupMap: Record<string, string>;
+  colorByField: string;
+}) {
+  const entries = Object.entries(groupMap).slice(0, 8);
+  if (entries.length === 0) return null;
+  return (
+    <div className="absolute bottom-4 left-4 bg-bg-surface/80 border border-bg-border rounded-lg p-2.5 text-xs backdrop-blur-sm z-10 max-w-[160px]">
+      <p className="text-tx-muted mb-1.5 font-medium">{colorByField}</p>
+      <div className="flex flex-col gap-1">
+        {entries.map(([val, color]) => (
+          <div key={val} className="flex items-center gap-1.5">
+            <span
+              className="w-2.5 h-2.5 rounded-full shrink-0"
+              style={{ backgroundColor: color, boxShadow: `0 0 4px ${color}` }}
+            />
+            <span className="text-tx-secondary truncate">{val}</span>
+          </div>
+        ))}
+        {Object.keys(groupMap).length > 8 && (
+          <p className="text-tx-muted mt-0.5">+{Object.keys(groupMap).length - 8} more</p>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ── HUD overlay ───────────────────────────────────────────────────────────────
+
+function HUD({
+  count,
+  algorithm,
+  elapsedMs,
+}: {
+  count: number;
+  algorithm: string;
+  elapsedMs: number | null;
+}) {
+  return (
+    <div className="absolute top-4 right-4 bg-bg-surface/80 border border-bg-border rounded-lg px-3 py-2 text-xs backdrop-blur-sm z-10 flex flex-col gap-0.5 text-right">
+      <span className="text-tx-secondary font-mono">{count} points</span>
+      <span className="text-tx-muted">{algorithm.toUpperCase()}</span>
+      {elapsedMs != null && (
+        <span className="text-tx-muted">{(elapsedMs / 1000).toFixed(1)}s</span>
       )}
     </div>
   );
@@ -178,35 +380,82 @@ export function VectorExplorer() {
   const { backends, collectionName } = useVaraStore();
 
   // Controls
-  const [idsText,     setIdsText]     = useState("");
-  const [backendName, setBackendName] = useState(backends[0]?.name ?? "");
-  const [algorithm,   setAlgorithm]   = useState<"umap" | "tsne">("umap");
-  const [nNeighbors,  setNNeighbors]  = useState("15");
-  const [minDist,     setMinDist]     = useState("0.1");
+  const [idsText,      setIdsText]      = useState("");
+  const [backendName,  setBackendName]  = useState(backends[0]?.name ?? "");
+  const [algorithm,    setAlgorithm]    = useState<"umap" | "tsne">("umap");
+  const [nNeighbors,   setNNeighbors]   = useState("15");
+  const [minDist,      setMinDist]      = useState("0.1");
+  const [colorByField, setColorByField] = useState("tenant_id");
 
   // Run state
   const [status,    setStatus]    = useState<Status>("idle");
-  const [points,    setPoints]    = useState<ProjectionPoint[]>([]);
+  const [rawPoints, setRawPoints] = useState<ProjectionPoint[]>([]);
   const [projected, setProjected] = useState(0);
   const [total,     setTotal]     = useState(0);
   const [jobId,     setJobId]     = useState<string | null>(null);
   const [errorMsg,  setErrorMsg]  = useState<string | null>(null);
+  const [elapsedMs, setElapsedMs] = useState<number | null>(null);
 
-  // Hover state
+  // Interaction state
   const [hoveredId,  setHoveredId]  = useState<string | null>(null);
   const [hoveredPt,  setHoveredPt]  = useState<ProjectionPoint | null>(null);
   const [tooltipPos, setTooltipPos] = useState<[number, number] | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [autoRotate, setAutoRotate] = useState(true);
 
   const closeWS = useRef<(() => void) | null>(null);
+
+  // Normalise coordinates to [-2,2] cube
+  const normPoints: NormPoint[] = useMemo(() => {
+    if (rawPoints.length === 0) return [];
+    const xs = rawPoints.map((p) => p.x);
+    const ys = rawPoints.map((p) => p.y);
+    const zs = rawPoints.map((p) => p.z);
+    const cx = (Math.min(...xs) + Math.max(...xs)) / 2;
+    const cy = (Math.min(...ys) + Math.max(...ys)) / 2;
+    const cz = (Math.min(...zs) + Math.max(...zs)) / 2;
+    const span = Math.max(
+      Math.max(...xs) - Math.min(...xs),
+      Math.max(...ys) - Math.min(...ys),
+      Math.max(...zs) - Math.min(...zs),
+      0.001,
+    );
+    const s = 4 / span;
+    return rawPoints.map((p) => ({
+      id: p.id,
+      x: (p.x - cx) * s,
+      y: (p.y - cy) * s,
+      z: (p.z - cz) * s,
+      payload: p.payload,
+    }));
+  }, [rawPoints]);
+
+  // Group → color per payload value
+  const groupColorMap = useMemo(
+    () => buildGroupColorMap(normPoints, colorByField),
+    [normPoints, colorByField],
+  );
+
+  // id → color map for PointCloud
+  const idColorMap = useMemo(() => {
+    const map: Record<string, string> = {};
+    normPoints.forEach((p) => {
+      const val = String(p.payload?.[colorByField] ?? "—");
+      map[p.id] = groupColorMap[val] ?? GROUP_PALETTE[0];
+    });
+    return map;
+  }, [normPoints, groupColorMap, colorByField]);
 
   const handleHover = useCallback(
     (id: string | null, pos: [number, number] | null) => {
       setHoveredId(id);
       setTooltipPos(pos);
-      setHoveredPt(id ? (points.find((p) => p.id === id) ?? null) : null);
+      setHoveredPt(id ? (rawPoints.find((p) => p.id === id) ?? null) : null);
     },
-    [points],
+    [rawPoints],
   );
+
+  const handlePointerDown = useCallback(() => setAutoRotate(false), []);
 
   const project = useCallback(
     (baseJobId?: string) => {
@@ -217,8 +466,13 @@ export function VectorExplorer() {
 
       setErrorMsg(null);
       setStatus("running");
+      setAutoRotate(true);
+      setSelectedId(null);
+      const now = Date.now();
+      setElapsedMs(null);
+
       if (!baseJobId) {
-        setPoints([]);
+        setRawPoints([]);
         setProjected(0);
         setTotal(0);
         setJobId(null);
@@ -234,16 +488,23 @@ export function VectorExplorer() {
           min_dist:    Number(minDist),
           ...(baseJobId ? { base_job_id: baseJobId } : {}),
         },
-        (jid) => setJobId(jid),
-        (msg) => {
-          setPoints((prev) => [...prev, ...msg.points]);
+        (jid)  => setJobId(jid),
+        (msg)  => {
+          setRawPoints((prev) => [...prev, ...msg.points]);
           setProjected(msg.projected);
           setTotal(msg.total);
         },
-        (_jid) => { setStatus("complete"); closeWS.current = null; },
-        (msg)  => { setErrorMsg(msg); setStatus("error"); closeWS.current = null; },
+        (_jid) => {
+          setStatus("complete");
+          setElapsedMs(Date.now() - now);
+          closeWS.current = null;
+        },
+        (msg)  => {
+          setErrorMsg(msg);
+          setStatus("error");
+          closeWS.current = null;
+        },
       );
-
       closeWS.current = close;
     },
     [idsText, collectionName, backendName, algorithm, nNeighbors, minDist],
@@ -259,6 +520,10 @@ export function VectorExplorer() {
     { value: "tsne", label: "t-SNE" },
   ];
 
+  const selectedPoint = selectedId
+    ? rawPoints.find((p) => p.id === selectedId) ?? null
+    : null;
+
   return (
     <div className="flex flex-col gap-4" style={{ height: "calc(100vh - 112px)" }}>
       <h1 className="text-xl font-semibold text-tx-primary shrink-0">Vector Explorer</h1>
@@ -267,7 +532,7 @@ export function VectorExplorer() {
       <Card className="shrink-0">
         <div className="flex flex-col gap-3">
           <div className="flex gap-3 flex-wrap">
-            <div className="flex-1 min-w-[200px]">
+            <div className="flex-1 min-w-[180px]">
               <Input
                 label="Point IDs (comma-separated)"
                 placeholder="0, 1, 2, 10, 42"
@@ -276,7 +541,7 @@ export function VectorExplorer() {
                 disabled={status === "running"}
               />
             </div>
-            <div className="flex-1 min-w-[140px]">
+            <div className="w-36 shrink-0">
               <Select
                 label="Backend"
                 options={backendOptions.length ? backendOptions : [{ value: "", label: "No backends" }]}
@@ -294,10 +559,18 @@ export function VectorExplorer() {
                 disabled={status === "running"}
               />
             </div>
+            <div className="w-28 shrink-0">
+              <Input
+                label="Color by field"
+                placeholder="tenant_id"
+                value={colorByField}
+                onChange={(e) => setColorByField(e.target.value)}
+              />
+            </div>
           </div>
 
-          <div className="flex gap-3 flex-wrap">
-            <div className="w-28 shrink-0">
+          <div className="flex gap-3 flex-wrap items-end">
+            <div className="w-24 shrink-0">
               <Input
                 label="n_neighbors"
                 type="number"
@@ -308,7 +581,7 @@ export function VectorExplorer() {
                 disabled={status === "running"}
               />
             </div>
-            <div className="w-28 shrink-0">
+            <div className="w-24 shrink-0">
               <Input
                 label="min_dist"
                 type="number"
@@ -320,7 +593,7 @@ export function VectorExplorer() {
                 disabled={status === "running"}
               />
             </div>
-            <div className="flex items-end gap-2">
+            <div className="flex items-end gap-2 flex-wrap">
               <Button onClick={() => project()} disabled={status === "running"}>
                 {status === "running" ? <Spinner size="sm" /> : <Play size={14} />}
                 {status === "running" ? "Projecting…" : "Project"}
@@ -334,10 +607,9 @@ export function VectorExplorer() {
             </div>
           </div>
 
-          {/* Status row */}
           <div className="flex items-center gap-3 flex-wrap">
             {status === "running"  && <Badge variant="info">running</Badge>}
-            {status === "complete" && <Badge variant="healthy">complete — {points.length} points</Badge>}
+            {status === "complete" && <Badge variant="healthy">complete — {rawPoints.length} points</Badge>}
             {status === "error"    && <Badge variant="error">error</Badge>}
             {jobId && <span className="text-xs font-mono text-tx-muted">job: {jobId}</span>}
             {errorMsg && <span className="text-xs text-sev-error">{errorMsg}</span>}
@@ -350,8 +622,11 @@ export function VectorExplorer() {
       </Card>
 
       {/* ── 3D Canvas ── */}
-      <div className="relative flex-1 rounded-lg overflow-hidden border border-bg-border bg-bg-surface">
-        {points.length === 0 && status === "idle" && (
+      <div
+        className="relative flex-1 rounded-lg overflow-hidden border border-bg-border bg-bg-surface"
+        onPointerDown={handlePointerDown}
+      >
+        {normPoints.length === 0 && status === "idle" && (
           <div className="absolute inset-0 flex items-center justify-center">
             <EmptyState
               message="No projection yet"
@@ -360,30 +635,59 @@ export function VectorExplorer() {
           </div>
         )}
 
-        {points.length === 0 && status === "running" && (
+        {normPoints.length === 0 && status === "running" && (
           <div className="absolute inset-0 flex items-center justify-center">
             <Spinner size="lg" />
           </div>
         )}
 
-        {points.length > 0 && (
-          <Canvas
-            camera={{ position: [0, 0, 5], fov: 60 }}
-            style={{ background: "#0F1117" }}
-          >
-            <ambientLight intensity={0.5} />
-            <PointCloud
-              points={points}
-              hoveredId={hoveredId}
-              onHover={handleHover}
-            />
-            <OrbitControls makeDefault />
-          </Canvas>
-        )}
+        {normPoints.length > 0 && (
+          <>
+            <Canvas
+              camera={{ position: [0, 0, 8], fov: 60 }}
+              style={{ background: "#0A0C14" }}
+              gl={{ antialias: true, toneMapping: THREE.ACESFilmicToneMapping }}
+            >
+              <PointCloud
+                points={normPoints}
+                hoveredId={hoveredId}
+                selectedId={selectedId}
+                colorMap={idColorMap}
+                onHover={handleHover}
+                onSelect={setSelectedId}
+                autoRotate={autoRotate}
+              />
+              <EffectComposer>
+                <Bloom
+                  luminanceThreshold={0.2}
+                  luminanceSmoothing={0.9}
+                  intensity={1.4}
+                />
+              </EffectComposer>
+            </Canvas>
 
-        {/* Hover tooltip */}
-        {hoveredPt && tooltipPos && (
-          <Tooltip point={hoveredPt} pos={tooltipPos} />
+            {/* Overlays */}
+            <HUD
+              count={normPoints.length}
+              algorithm={algorithm}
+              elapsedMs={elapsedMs}
+            />
+            <ColorLegend groupMap={groupColorMap} colorByField={colorByField} />
+
+            {/* Hover tooltip */}
+            {hoveredPt && tooltipPos && !selectedId && (
+              <Tooltip point={hoveredPt} pos={tooltipPos} />
+            )}
+
+            {/* Selection side panel */}
+            {selectedPoint && (
+              <SelectionPanel
+                point={selectedPoint}
+                color={idColorMap[selectedPoint.id] ?? GROUP_PALETTE[0]}
+                onClose={() => setSelectedId(null)}
+              />
+            )}
+          </>
         )}
       </div>
     </div>
