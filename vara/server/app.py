@@ -25,6 +25,7 @@ from vara.config.loader import get_adapter_configs, load_config
 from vara.projection.jobs import ProjectionJobStore
 from vara.server.routes import collections, config, query
 from vara.server.routes import eval as eval_routes
+from vara.server.routes import projection as projection_routes
 from vara.server.websocket.eval_stream import stream_eval_job
 from vara.server.websocket.projection_stream import stream_projection_job
 
@@ -105,6 +106,7 @@ def create_app(config_path: str | None = None) -> FastAPI:
     app.include_router(collections.router, prefix="/api")
     app.include_router(query.router, prefix="/api")
     app.include_router(eval_routes.router, prefix="/api")
+    app.include_router(projection_routes.router, prefix="/api")
 
     # WebSocket routes — registered directly on app (not in APIRouter)
     @app.websocket("/ws/eval/{job_id}")

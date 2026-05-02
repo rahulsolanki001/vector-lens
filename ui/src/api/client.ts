@@ -1,5 +1,7 @@
 import type {
   BackendComparison,
+  ClusterRequest,
+  ClusterResponse,
   CollectionInfo,
   ConfigResponse,
   DebugQueryRequest,
@@ -111,6 +113,10 @@ export function connectEvalWS(
 }
 
 // ── Projection ────────────────────────────────────────────────────────────────
+
+export function clusterProjection(jobId: string, req: ClusterRequest): Promise<ClusterResponse> {
+  return post<ClusterResponse>(`/projection/${encodeURIComponent(jobId)}/cluster`, req);
+}
 
 export function connectProjectionWS(
   params: ProjectionParams,

@@ -215,6 +215,20 @@ export type ProjectionWsMessage =
   | { type: "complete"; job_id: string }
   | { type: "error"; error: string };
 
+// ── Clustering ────────────────────────────────────────────────────────────────
+
+export interface ClusterRequest {
+  min_cluster_size?: number;
+  min_samples?: number | null;
+}
+
+export interface ClusterResponse {
+  job_id: string;
+  labels: Record<string, number>;  // -1 = noise
+  n_clusters: number;
+  noise_count: number;
+}
+
 // ── Request bodies ────────────────────────────────────────────────────────────
 
 export interface DebugQueryRequest {

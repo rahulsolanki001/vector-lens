@@ -3,9 +3,9 @@ import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { OrbitControls } from "@react-three/drei";
 import { EffectComposer, Bloom } from "@react-three/postprocessing";
 import * as THREE from "three";
-import { Play, Plus, X } from "lucide-react";
+import { Layers, Play, Plus, X } from "lucide-react";
 import type { ProjectionPoint } from "../api/types";
-import { connectProjectionWS } from "../api/client";
+import { clusterProjection, connectProjectionWS } from "../api/client";
 import { useVaraStore } from "../store";
 import { Card } from "../components/ui/Card";
 import { Badge } from "../components/ui/Badge";
@@ -19,6 +19,8 @@ import { EmptyState } from "../components/ui/EmptyState";
 type Status = "idle" | "running" | "complete" | "error";
 
 // ── Color palette for payload groups ─────────────────────────────────────────
+
+const NOISE_COLOR = "#374151"; // muted gray for HDBSCAN noise points (label -1)
 
 const GROUP_PALETTE = [
   "#7C6AF7", // accent indigo
@@ -402,6 +404,13 @@ export function VectorExplorer() {
   const [errorMsg,  setErrorMsg]  = useState<string | null>(null);
   const [elapsedMs, setElapsedMs] = useState<number | null>(null);
 
+  // Cluster state
+  const [clusterLabels,    setClusterLabels]    = useState<Record<string, number> | null>(null);
+  const [clusterStats,     setClusterStats]     = useState<{ n_clusters: number; noise_count: number } | null>(null);
+  const [colorMode,        setColorMode]        = useState<"field" | "cluster">("field");
+  const [minClusterSize,   setMinClusterSize]   = useState("5");
+  const [clusterLoading,   setClusterLoading]   = useState(false);
+
   // Interaction state
   const [hoveredId,  setHoveredId]  = useState<string | null>(null);
   const [hoveredPt,  setHoveredPt]  = useState<ProjectionPoint | null>(null);
@@ -442,15 +451,53 @@ export function VectorExplorer() {
     [normPoints, colorByField],
   );
 
-  // id → color map for PointCloud
+  // id → color map for PointCloud (switches between field and cluster modes)
   const idColorMap = useMemo(() => {
     const map: Record<string, string> = {};
     normPoints.forEach((p) => {
-      const val = String(p.payload?.[colorByField] ?? "—");
-      map[p.id] = groupColorMap[val] ?? GROUP_PALETTE[0];
+      if (colorMode === "cluster" && clusterLabels) {
+        const label = clusterLabels[p.id] ?? -1;
+        map[p.id] = label === -1 ? NOISE_COLOR : GROUP_PALETTE[label % GROUP_PALETTE.length];
+      } else {
+        const val = String(p.payload?.[colorByField] ?? "—");
+        map[p.id] = groupColorMap[val] ?? GROUP_PALETTE[0];
+      }
     });
     return map;
-  }, [normPoints, groupColorMap, colorByField]);
+  }, [normPoints, groupColorMap, colorByField, colorMode, clusterLabels]);
+
+  // Legend entries + label — switches with colorMode
+  const legendEntries = useMemo(() => {
+    if (colorMode === "cluster" && clusterLabels) {
+      const seen = new Set(Object.values(clusterLabels));
+      const map: Record<string, string> = {};
+      Array.from(seen)
+        .sort((a, b) => a - b)
+        .forEach((label) => {
+          map[label === -1 ? "noise" : `cluster ${label}`] =
+            label === -1 ? NOISE_COLOR : GROUP_PALETTE[label % GROUP_PALETTE.length];
+        });
+      return map;
+    }
+    return groupColorMap;
+  }, [colorMode, clusterLabels, groupColorMap]);
+
+  const legendLabel = colorMode === "cluster" ? "clusters" : colorByField;
+
+  const runCluster = useCallback(async () => {
+    if (!jobId) return;
+    setClusterLoading(true);
+    try {
+      const res = await clusterProjection(jobId, { min_cluster_size: Number(minClusterSize) });
+      setClusterLabels(res.labels);
+      setClusterStats({ n_clusters: res.n_clusters, noise_count: res.noise_count });
+      setColorMode("cluster");
+    } catch (e) {
+      setErrorMsg(e instanceof Error ? e.message : "Clustering failed");
+    } finally {
+      setClusterLoading(false);
+    }
+  }, [jobId, minClusterSize]);
 
   const handleHover = useCallback(
     (id: string | null, pos: [number, number] | null) => {
@@ -482,6 +529,9 @@ export function VectorExplorer() {
         setProjected(0);
         setTotal(0);
         setJobId(null);
+        setClusterLabels(null);
+        setClusterStats(null);
+        setColorMode("field");
       }
 
       const close = connectProjectionWS(
@@ -652,6 +702,62 @@ export function VectorExplorer() {
           {(status === "running" || (status === "complete" && total > 0)) && (
             <ProgressBar value={projected} max={total} />
           )}
+
+          {/* ── Cluster controls ── */}
+          {status === "complete" && jobId && (
+            <div className="flex items-end gap-3 flex-wrap pt-3 border-t border-bg-border">
+              <div className="w-32 shrink-0">
+                <Input
+                  label="min cluster size"
+                  type="number"
+                  min={2}
+                  value={minClusterSize}
+                  onChange={(e) => setMinClusterSize(e.target.value)}
+                  disabled={clusterLoading}
+                />
+              </div>
+              <Button variant="ghost" onClick={runCluster} disabled={clusterLoading}>
+                {clusterLoading ? <Spinner size="sm" /> : <Layers size={14} />}
+                {clusterLoading ? "Clustering…" : "Cluster"}
+              </Button>
+              {clusterLabels && (
+                <>
+                  {clusterStats && (
+                    <span className="text-xs text-tx-muted self-end pb-1.5">
+                      {clusterStats.n_clusters} clusters · {clusterStats.noise_count} noise
+                    </span>
+                  )}
+                  <div className="flex gap-0.5 p-0.5 bg-bg-raised rounded-md self-end">
+                    {(["field", "cluster"] as const).map((m) => (
+                      <button
+                        key={m}
+                        onClick={() => setColorMode(m)}
+                        className={`px-2 py-1 text-xs rounded font-medium transition-colors ${
+                          colorMode === m
+                            ? "bg-accent text-white"
+                            : "text-tx-secondary hover:text-tx-primary"
+                        }`}
+                      >
+                        {m === "field" ? "By field" : "By cluster"}
+                      </button>
+                    ))}
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      setClusterLabels(null);
+                      setClusterStats(null);
+                      setColorMode("field");
+                    }}
+                  >
+                    <X size={14} />
+                    Clear
+                  </Button>
+                </>
+              )}
+            </div>
+          )}
         </div>
       </Card>
 
@@ -708,7 +814,7 @@ export function VectorExplorer() {
               viewMode={viewMode}
               elapsedMs={elapsedMs}
             />
-            <ColorLegend groupMap={groupColorMap} colorByField={colorByField} />
+            <ColorLegend groupMap={legendEntries} colorByField={legendLabel} />
 
             {/* Hover tooltip */}
             {hoveredPt && tooltipPos && !selectedId && (
