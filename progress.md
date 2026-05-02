@@ -1,6 +1,6 @@
 # Vara Progress Tracker
 
-Last updated: 2026-05-01 (night, backend verified)
+Last updated: 2026-05-01 (pgvector adapter complete)
 
 ## Current Status
 
@@ -42,7 +42,7 @@ Notes:
 | `vara/adapters/__init__.py` | `build_adapter()` factory with lazy imports |
 | `vara/adapters/qdrant.py` | Async Qdrant adapter with connect, query, stats, vector fetch, filter translation, and health checks |
 | `vara/adapters/pinecone.py` | Import-clean planned adapter placeholder |
-| `vara/adapters/pgvector.py` | Import-clean planned adapter placeholder |
+| `vara/adapters/pgvector.py` | Full asyncpg + pgvector adapter: connect/disconnect with pool, metric auto-detection from pg_indexes, list_collections, collection_stats, query, get_vectors, health (5 checks), filter translation, vector parsing |
 | `vara/adapters/milvus.py` | Import-clean planned adapter placeholder |
 
 ### Config Layer
@@ -121,7 +121,24 @@ Notes:
 | `POST /api/eval/run` + `WS /ws/eval/{job_id}` | ✅ ndcg=0.53, mrr=1.0, recall=0.4, p50=18ms |
 | `WS /ws/projection` | ✅ UMAP 50 vectors → 5 batches of x/y/z coordinates |
 
+### pgvector Adapter (Phase 1 Extension)
+
+| Feature | Status |
+|---------|--------|
+| asyncpg connection pool (per-operation acquire) | ✅ |
+| Distance metric auto-detection from `pg_indexes.indexdef` | ✅ |
+| `_build_where` — Vara canonical filter → parameterised SQL (`$1` reserved for vector) | ✅ |
+| `list_collections` — `atttypmod` for dimension, single `CollectionInfo` | ✅ |
+| `collection_stats` — `pg_total_relation_size`, index type from `pg_indexes` | ✅ |
+| `query` — `$1`=vector, filter params `$2+`, conditional payload/vector SELECT | ✅ |
+| `get_vectors` — `WHERE id = ANY($1)`, `vector::text` cast, `_parse_vector` | ✅ |
+| `health` — 5 checks: reachability, pgvector ext, table exists, HNSW/IVFFlat index, empty table | ✅ |
+
 ## Next Steps
+
+### 0. pgvector Live Testing
+
+Test the pgvector adapter against the local pgvector instance (800k vectors) by adding a second backend entry in `vara.yaml` and running the same curl sequence used for Qdrant.
 
 ### 1. React UI (Phase 6)
 
