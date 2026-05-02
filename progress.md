@@ -1,6 +1,6 @@
 # Vara Progress Tracker
 
-Last updated: 2026-05-02 (Phase 6 steps 1–7 done)
+Last updated: 2026-05-02 (Phase 6 steps 1–8 done)
 
 ## Current Status
 
@@ -150,8 +150,8 @@ Theme: dark + indigo-violet. Full design spec in `UI.md`.
 | 5 | Shared components | ✅ |
 | 6 | IndexHealth panel | ✅ |
 | 7 | QueryDebugger panel | ✅ |
-| 8 | EvalRunner panel | 🔲 next |
-| 9 | VectorExplorer panel | 🔲 |
+| 8 | EvalRunner panel | ✅ |
+| 9 | VectorExplorer panel | 🔲 next |
 
 ### 2. Packaging (Phase 7)
 
