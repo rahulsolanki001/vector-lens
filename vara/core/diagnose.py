@@ -69,6 +69,10 @@ class DiagnosisResult(BaseModel):
     document_diagnoses: list[ExpectedDocumentDiagnosis] = Field(default_factory=list)
     summary: str
     verdict: str | None = None
+    hit_count: int = 0
+    total_expected: int = 0
+    recall_at_k: float | None = None
+    mrr: float | None = None
 
 
 async def diagnose_retrieval(
@@ -129,6 +133,16 @@ async def diagnose_retrieval(
         for expected_id in expected_ids
     ]
 
+    total_expected = len(expected_ids)
+    hit_count = sum(1 for d in diagnoses if d.retrieved)
+    recall_at_k = hit_count / total_expected if total_expected > 0 else None
+    mrr = (
+        sum(1.0 / d.rank for d in diagnoses if d.retrieved and d.rank is not None)
+        / total_expected
+        if total_expected > 0
+        else None
+    )
+
     return DiagnosisResult(
         backend_name=backend.name,
         backend_type=backend.backend_type,
@@ -141,6 +155,10 @@ async def diagnose_retrieval(
         document_diagnoses=diagnoses,
         summary=_summarize(diagnoses, query_errors),
         verdict=_classify_verdict(diagnoses, query_errors),
+        hit_count=hit_count,
+        total_expected=total_expected,
+        recall_at_k=recall_at_k,
+        mrr=mrr,
     )
 
 

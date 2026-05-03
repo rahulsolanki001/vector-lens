@@ -162,6 +162,10 @@ export interface DiagnosisResult {
   document_diagnoses: ExpectedDocumentDiagnosis[];
   summary: string;
   verdict: string | null;
+  hit_count: number;
+  total_expected: number;
+  recall_at_k: number | null;
+  mrr: number | null;
 }
 
 // ── Eval ──────────────────────────────────────────────────────────────────────

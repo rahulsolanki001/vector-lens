@@ -226,6 +226,7 @@ src/components/
 - **Compare mode**: result diff table shows ID, rank A/B, Δ rank, score A/B, Δ score, missing flag for every hit across both backends
 - **Diagnose mode**: amber verdict banner classifies the dominant root cause (not in index / filter exclusion / embedding mismatch / low rank)
 - **"View in Explorer" button**: appears on debug results (all hit IDs) and diagnose results (retrieved + expected IDs); seeds `explorerSeedIds` in store and navigates to `/explore`
+- **Diagnose mode ground truth tiles**: three metric tiles (`Recall@k`, `MRR`, `Hits N/M`) appear between the Summary card and per-document list whenever `expected_ids` are provided; computed by the backend in `diagnose_retrieval()` and added to `DiagnosisResult`
 
 ---
 
@@ -367,6 +368,7 @@ src/components/
 | 14 | QueryDebugger — result diff table (compare mode) | ✅ done |
 | 15 | QueryDebugger — verdict banner (diagnose mode) | ✅ done |
 | 16 | QueryDebugger → VectorExplorer jump via Zustand seed + auto-project | ✅ done |
+| 17 | QueryDebugger — ground truth metric tiles (Recall@k, MRR, Hits) in diagnose mode | ✅ done |
 
 ### Notes
 - Pinned `@react-three/drei@^9` (not v10) — fiber v8 requires React 18; drei v10 requires fiber v9 + React 19

@@ -395,6 +395,22 @@ function DiagnoseResults({
         )}
       </Card>
 
+      {/* Ground truth metrics */}
+      {result.total_expected > 0 && (
+        <div className="grid grid-cols-3 gap-3">
+          {[
+            { label: `Recall@${result.top_k}`, value: result.recall_at_k != null ? result.recall_at_k.toFixed(3) : "—" },
+            { label: "MRR",                    value: result.mrr          != null ? result.mrr.toFixed(3)          : "—" },
+            { label: "Hits",                   value: `${result.hit_count} / ${result.total_expected}` },
+          ].map(({ label, value }) => (
+            <div key={label} className="flex flex-col gap-0.5 bg-bg-raised rounded-lg px-4 py-3">
+              <span className="text-xs text-tx-muted">{label}</span>
+              <span className="text-xl font-mono font-semibold text-tx-primary">{value}</span>
+            </div>
+          ))}
+        </div>
+      )}
+
       {/* Per-document diagnoses */}
       <div className="flex flex-col gap-3">
         {result.document_diagnoses.map((doc) => (
