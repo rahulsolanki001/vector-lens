@@ -48,18 +48,53 @@ class EvalDataset(BaseModel):
         return len(relevant_ids)
 
 
+class JSONLoader:
+    """
+    JSON / JSONL dataset loader.
+
+    Accepts either:
+      - A JSON array file:  [{id, text, vector, relevant_ids}, ...]
+      - A JSONL file:       one JSON object per line (same fields)
+
+    Field aliases mirror CSVLoader:
+      id / query_id / qid
+      text / query
+      vector / query_vector / embedding
+      relevant_ids / relevant / doc_ids / expected_ids
+    """
+
+    def load(self, path: str | Path) -> EvalDataset:
+        json_path = Path(path)
+        raw = json_path.read_text(encoding="utf-8").strip()
+
+        # JSONL: lines that each start with "{"
+        if raw.startswith("{"):
+            records: list[dict[str, Any]] = [
+                json.loads(line) for line in raw.splitlines() if line.strip()
+            ]
+        else:
+            records = json.loads(raw)
+            if not isinstance(records, list):
+                raise ValueError(
+                    f"JSON dataset '{json_path}' must be an array of objects."
+                )
+
+        if not records:
+            raise ValueError(f"JSON dataset '{json_path}' contains no records.")
+
+        queries = [_parse_json_record(r, i + 1) for i, r in enumerate(records)]
+        return EvalDataset(
+            name=json_path.stem,
+            queries=queries,
+            metadata={"source": str(json_path), "format": "json"},
+        )
+
+
 class FiQALoader:
     """Planned built-in FiQA dataset loader."""
 
     def load(self, path: str | None = None) -> EvalDataset:
-        raise NotImplementedError("FiQA loader is planned for Phase 3.")
-
-
-class BEIRLoader:
-    """Planned BEIR-format dataset loader."""
-
-    def load(self, path: str) -> EvalDataset:
-        raise NotImplementedError("BEIR loader is planned for Phase 3.")
+        raise NotImplementedError("FiQA loader is planned for a future release.")
 
 
 class CSVLoader:
@@ -191,6 +226,47 @@ def _parse_vector(raw: str, row_number: int) -> list[float]:
         ) from exc
 
 
+def _parse_json_record(record: dict[str, Any], record_number: int) -> EvalQuery:
+    """Parse one JSON object into an EvalQuery using the same field aliases as CSV."""
+    aliases = {k.lower(): v for k, v in record.items()}
+
+    def _get(options: list[str], label: str) -> Any:
+        for key in options:
+            if key in aliases:
+                return aliases[key]
+        raise ValueError(
+            f"JSON record {record_number} is missing required field. "
+            f"Expected one of: {', '.join(options)}."
+        )
+
+    raw_id      = str(_get(["id", "query_id", "qid"], "id"))
+    raw_text    = str(_get(["text", "query"], "text"))
+    raw_vector  = _get(["vector", "query_vector", "embedding"], "vector")
+    raw_rel     = _get(["relevant_ids", "relevant", "doc_ids", "expected_ids"], "relevant_ids")
+
+    # Vector: already a list or a JSON string
+    if isinstance(raw_vector, list):
+        try:
+            vector = [float(v) for v in raw_vector]
+        except (TypeError, ValueError) as exc:
+            raise ValueError(
+                f"JSON record {record_number} has a non-numeric vector."
+            ) from exc
+    else:
+        vector = _parse_vector(str(raw_vector), record_number)
+
+    # Relevant IDs: list or delimited string
+    if isinstance(raw_rel, list):
+        relevant_ids = {str(v).strip() for v in raw_rel if str(v).strip()}
+    else:
+        relevant_ids = _parse_relevant_ids(str(raw_rel), record_number)
+
+    if not relevant_ids:
+        raise ValueError(f"JSON record {record_number} has no relevant IDs.")
+
+    return EvalQuery(id=raw_id, text=raw_text, vector=vector, relevant_ids=relevant_ids)
+
+
 def _parse_json_list(raw: str) -> list[Any] | None:
     stripped = raw.strip()
     if not stripped.startswith("["):
@@ -208,9 +284,9 @@ def _parse_json_list(raw: str) -> list[Any] | None:
 
 
 __all__ = [
-    "BEIRLoader",
     "CSVLoader",
     "EvalDataset",
     "EvalQuery",
     "FiQALoader",
+    "JSONLoader",
 ]

@@ -22,6 +22,7 @@ import { Spinner } from "../components/ui/Spinner";
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 type Status = "idle" | "running" | "complete" | "error";
+type Source = "csv" | "json" | "collection";
 
 interface ChartPoint {
   query: number;
@@ -78,7 +79,9 @@ export function EvalRunner() {
   const { backends, collectionName } = useVaraStore();
 
   // Config
-  const [datasetPath, setDatasetPath] = useState("");
+  const [source,      setSource]      = useState<Source>("csv");
+  const [sourcePath,  setSourcePath]  = useState("");
+  const [nSamples,    setNSamples]    = useState("50");
   const [backendName, setBackendName] = useState(backends[0]?.name ?? "");
   const [k, setK] = useState("10");
 
@@ -107,9 +110,11 @@ export function EvalRunner() {
   }, []);
 
   const run = useCallback(async () => {
-    if (!datasetPath.trim()) { setErrorMsg("Dataset path is required"); return; }
-    if (!collectionName)     { setErrorMsg("Select a collection first"); return; }
-    if (!backendName)        { setErrorMsg("Select a backend"); return; }
+    if (source !== "collection" && !sourcePath.trim()) {
+      setErrorMsg("Dataset path is required"); return;
+    }
+    if (!collectionName) { setErrorMsg("Select a collection first"); return; }
+    if (!backendName)    { setErrorMsg("Select a backend"); return; }
 
     setErrorMsg(null);
     setProgress([]);
@@ -118,7 +123,10 @@ export function EvalRunner() {
 
     try {
       const resp = await startEval({
-        dataset_path: datasetPath.trim(),
+        source,
+        ...(source !== "collection"
+          ? { source_path: sourcePath.trim() }
+          : { n_samples: Number(nSamples) }),
         collection: collectionName,
         backend_name: backendName,
         k: Number(k),
@@ -138,7 +146,7 @@ export function EvalRunner() {
       setErrorMsg(e instanceof Error ? e.message : "Failed to start eval");
       setStatus("error");
     }
-  }, [datasetPath, collectionName, backendName, k]);
+  }, [source, sourcePath, nSamples, collectionName, backendName, k]);
 
   const backendOptions = backends.map((b) => ({ value: b.name, label: b.name }));
 
@@ -149,13 +157,65 @@ export function EvalRunner() {
       {/* ── Config card ── */}
       <Card>
         <div className="flex flex-col gap-4">
-          <Input
-            label="Dataset path (CSV)"
-            placeholder="/path/to/eval_dataset.csv"
-            value={datasetPath}
-            onChange={(e) => setDatasetPath(e.target.value)}
-            disabled={status === "running"}
-          />
+          {/* Source tabs */}
+          <div className="flex flex-col gap-2">
+            <span className="text-xs text-tx-secondary">Dataset source</span>
+            <div className="flex gap-1 p-1 bg-bg-raised rounded-lg w-fit">
+              {(["csv", "json", "collection"] as const).map((s) => (
+                <button
+                  key={s}
+                  disabled={status === "running"}
+                  onClick={() => setSource(s)}
+                  className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                    source === s
+                      ? "bg-accent text-white"
+                      : "text-tx-secondary hover:text-tx-primary hover:bg-bg-border disabled:opacity-40"
+                  }`}
+                >
+                  {s === "csv" ? "CSV" : s === "json" ? "JSON" : "Collection"}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Source-specific inputs */}
+          {source === "csv" && (
+            <Input
+              label="File path"
+              placeholder="/path/to/eval_dataset.csv"
+              value={sourcePath}
+              onChange={(e) => setSourcePath(e.target.value)}
+              disabled={status === "running"}
+            />
+          )}
+          {source === "json" && (
+            <Input
+              label="File path"
+              placeholder="/path/to/eval_dataset.json"
+              value={sourcePath}
+              onChange={(e) => setSourcePath(e.target.value)}
+              disabled={status === "running"}
+            />
+          )}
+          {source === "collection" && (
+            <div className="flex items-start gap-3 flex-wrap">
+              <div className="w-32 shrink-0">
+                <Input
+                  label="n_samples"
+                  type="number"
+                  min={1}
+                  max={10000}
+                  value={nSamples}
+                  onChange={(e) => setNSamples(e.target.value)}
+                  disabled={status === "running"}
+                />
+              </div>
+              <p className="text-xs text-tx-muted self-end pb-2 max-w-xs">
+                Samples random vectors from the selected collection and evaluates
+                self-retrieval — each vector's only relevant result is itself.
+              </p>
+            </div>
+          )}
 
           <div className="flex gap-3 flex-wrap">
             <div className="flex-1 min-w-[160px]">

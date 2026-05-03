@@ -1,6 +1,6 @@
 # Vara Progress Tracker
 
-Last updated: 2026-05-02 (Phase 6 complete + post-launch improvements)
+Last updated: 2026-05-03 (Phase 6 complete + post-launch improvements)
 
 ## Current Status
 
@@ -154,12 +154,14 @@ Theme: dark + indigo-violet. Full design spec in `UI.md`.
 | 10 | VectorExplorer enhancements — bloom, payload coloring, click-select, neighbour lines, auto-rotate, HUD, color legend | ✅ |
 | 11 | VectorExplorer — 2D/3D projection toggle (`n_components` wired backend → frontend) | ✅ |
 | 12 | VectorExplorer — HDBSCAN clustering (`POST /api/projection/{job_id}/cluster`, color-mode toggle, noise points) | ✅ |
+| 13 | EvalRunner — multi-source dataset input: CSV, JSON/JSONL, Collection sample (`JSONLoader`, `sample_collection`) | ✅ |
 
 ### Post-launch Fixes
 
 | Fix | Status |
 |-----|--------|
 | t-SNE perplexity auto-clamped to `max(1, min(perplexity, n_samples - 1))` — prevents crash on small point sets | ✅ |
+| `BEIRLoader` stub removed from `vara/eval/__init__.py` export — replaced by `JSONLoader` + `sample_collection` | ✅ |
 
 ### Phase 7 - Packaging
 

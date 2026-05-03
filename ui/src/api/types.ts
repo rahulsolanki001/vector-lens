@@ -259,7 +259,9 @@ export interface DiagnoseRequest {
 }
 
 export interface EvalRunRequest {
-  dataset_path: string;
+  source: "csv" | "json" | "collection";
+  source_path?: string;       // csv / json
+  n_samples?: number;         // collection
   collection: string;
   backend_name: string;
   k?: number;

@@ -6,21 +6,23 @@ an async eval runner from this package.
 """
 
 from vara.eval.cache import EmbeddingCache
-from vara.eval.loaders import BEIRLoader, CSVLoader, EvalDataset, EvalQuery, FiQALoader
+from vara.eval.loaders import CSVLoader, EvalDataset, EvalQuery, FiQALoader, JSONLoader
+from vara.eval.sampler import sample_collection
 from vara.eval.metrics import latency_percentiles, mrr_at_k, ndcg_at_k, recall_at_k
 from vara.eval.runner import EvalProgress, run_eval
 
 __all__ = [
-    "BEIRLoader",
     "CSVLoader",
     "EmbeddingCache",
     "EvalDataset",
     "EvalProgress",
     "EvalQuery",
     "FiQALoader",
+    "JSONLoader",
     "latency_percentiles",
     "mrr_at_k",
     "ndcg_at_k",
     "recall_at_k",
     "run_eval",
+    "sample_collection",
 ]

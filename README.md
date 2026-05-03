@@ -51,7 +51,7 @@ Understand and compare retrieval behavior across backends.
     - score gap from top results
   - Provides actionable recommendations
 
-Helps answer: **“Why didn’t my query return what I expected?”**
+Helps answer: **"Why didn't my query return what I expected?"**
 
 ---
 
@@ -79,7 +79,10 @@ Helps distinguish **index issues vs embedding issues**
 
 Run reproducible retrieval benchmarks.
 
-- Execute evaluation from CSV datasets
+- Three dataset sources selectable from the UI:
+  - **CSV** — `id, text, vector, relevant_ids` columns (flexible field aliases)
+  - **JSON / JSONL** — array of objects or one object per line, same field aliases
+  - **Collection sample** — samples N random vectors from the live index and runs self-retrieval eval (no file needed)
 - Live streaming metrics via WebSocket:
   - nDCG@k
   - MRR@k
@@ -105,7 +108,7 @@ Understand the structure of your embedding space.
   - nearest-neighbour connections
 - Click:
   - full payload inspection in side panel
-- Incremental projection (“Add More IDs”)
+- Incremental projection ("Add More IDs")
 - HUD: point count, algorithm, dimension, timing
 
 Helps explain **why certain results are retrieved (or missed)**
@@ -134,6 +137,7 @@ docker compose -f docker-compose.dev.yml up -d
 
 # Start backend + UI
 vara dev
+```
 
 Then open [http://localhost:5173](http://localhost:5173).
 
@@ -161,7 +165,7 @@ backends:
 vara serve          # start the API server (opens browser)
 vara dev            # server + Vite hot-reload (development)
 vara check          # print a health table for all configured backends
-vara eval           # run a retrieval eval from a CSV and write JSON results
+vara eval           # run a retrieval eval from a dataset and write JSON results
 ```
 
 ## Adapter Status
@@ -173,14 +177,24 @@ vara eval           # run a retrieval eval from a CSV and write JSON results
 | Pinecone | Planned |
 | Milvus | Planned |
 
-## Eval CSV Format
+## Eval Dataset Formats
 
+**CSV**
 ```csv
 id,text,vector,relevant_ids
 q001,example query,"[0.1, 0.2, ...]","doc-1,doc-2"
 ```
 
-Required columns: `id` (or `query_id`/`qid`), `text` (or `query`), `vector`, `relevant_ids`.
+**JSON** (array or JSONL)
+```json
+[
+  {"id": "q001", "text": "example query", "vector": [0.1, 0.2], "relevant_ids": ["doc-1", "doc-2"]}
+]
+```
+
+Required fields: `id` (or `query_id`/`qid`), `text` (or `query`), `vector` (or `embedding`), `relevant_ids` (or `doc_ids`/`expected_ids`).
+
+**Collection sample** — no file needed; select backend + collection in the UI, set `n_samples`, and the runner fetches live vectors for a self-retrieval sanity check.
 
 ## Development
 
