@@ -377,7 +377,7 @@ class PgvectorAdapter(VecDBAdapter):
             rows = await conn.fetch(
                 f'SELECT "{id_col}", "{vec_col}"::text AS _vec, "{txt_col}" '
                 f'FROM "{table}" '
-                f'WHERE "{id_col}" = ANY($1)',
+                f'WHERE "{id_col}"::text = ANY($1)',
                 ids,
             )
 
