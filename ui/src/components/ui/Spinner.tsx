@@ -3,7 +3,7 @@ interface SpinnerProps {
   className?: string;
 }
 
-const sizeClass = { sm: "h-4 w-4", md: "h-6 w-6", lg: "h-8 w-8" };
+const sizeClass = { sm: "h-4 w-4", md: "h-5 w-5", lg: "h-7 w-7" };
 
 export function Spinner({ size = "md", className = "" }: SpinnerProps) {
   return (

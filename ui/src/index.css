@@ -2,8 +2,55 @@
 @tailwind components;
 @tailwind utilities;
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
+/* ── Geist (self-hosted variable fonts) ─────────────────────────────────── */
+@font-face {
+  font-family: "Geist";
+  src: url("/fonts/Geist-Variable.woff2") format("woff2");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
 
+@font-face {
+  font-family: "Geist Mono";
+  src: url("/fonts/GeistMono-Variable.woff2") format("woff2");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* ── Instrument Serif (wordmark + empty-state headlines only) ───────────── */
+@import url("https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&display=swap");
+
+/* ── Design tokens ───────────────────────────────────────────────────────── */
+:root {
+  --grad:     linear-gradient(135deg, #8B7DFF 0%, #5DE3FF 100%);
+  --vio-soft: rgba(139, 125, 255, 0.14);
+  --cy-soft:  rgba(93, 227, 255, 0.12);
+}
+
+/* ── Component classes ───────────────────────────────────────────────────── */
+@layer components {
+  .btn-primary {
+    background: linear-gradient(180deg, #8B7DFF, #6F60E8);
+    box-shadow: 0 4px 16px rgba(139, 125, 255, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+  }
+  .btn-primary:hover:not(:disabled) {
+    background: linear-gradient(180deg, #9D90FF, #7B6CF0);
+    box-shadow: 0 6px 20px rgba(139, 125, 255, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+  }
+  .btn-primary:active:not(:disabled) {
+    background: linear-gradient(180deg, #7B6CF0, #6255D8);
+    box-shadow: 0 2px 8px rgba(139, 125, 255, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  }
+  .btn-primary:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+    box-shadow: none;
+  }
+}
+
+/* ── Base ────────────────────────────────────────────────────────────────── */
 @layer base {
   html, body, #root {
     @apply h-full;
@@ -17,6 +64,16 @@
     @apply border-bg-border;
   }
 
+  ::selection {
+    background: var(--vio-soft);
+  }
+
+  /* Focus ring — calmer than the OS default */
+  :focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px var(--vio-soft), 0 0 0 1px #8B7DFF;
+  }
+
   ::-webkit-scrollbar {
     @apply w-1.5;
   }
@@ -27,6 +84,6 @@
     @apply bg-bg-border rounded-full;
   }
   ::-webkit-scrollbar-thumb:hover {
-    @apply bg-accent-muted;
+    background: rgba(139, 125, 255, 0.4);
   }
 }

@@ -18,17 +18,17 @@ export function CodeBlock({ code, maxHeight = "320px" }: CodeBlockProps) {
   }
 
   return (
-    <div className="relative rounded-md bg-bg-raised border border-bg-border group">
+    <div className="relative rounded-md bg-bg-base border border-bg-border group">
       <button
         onClick={handleCopy}
-        className="absolute top-2 right-2 p-1.5 rounded text-tx-muted hover:text-tx-primary hover:bg-bg-border transition-colors opacity-0 group-hover:opacity-100"
+        className="absolute top-2 right-2 p-1.5 rounded text-tx-muted hover:text-tx-primary hover:bg-bg-raised transition-colors opacity-0 group-hover:opacity-100"
         title="Copy"
       >
-        {copied ? <Check size={13} /> : <Copy size={13} />}
+        {copied ? <Check size={12} /> : <Copy size={12} />}
       </button>
       <pre
-        className="overflow-auto p-4 text-xs font-mono text-tx-code leading-relaxed"
-        style={{ maxHeight }}
+        className="overflow-auto px-4 py-3 text-xs font-mono text-tx-code leading-relaxed"
+        style={{ maxHeight, fontSize: "11.5px", lineHeight: "1.55" }}
       >
         <code>{code}</code>
       </pre>
