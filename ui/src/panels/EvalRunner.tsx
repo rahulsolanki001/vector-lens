@@ -76,14 +76,26 @@ function exportJSON(data: EvalProgress[]) {
 // ── Panel ─────────────────────────────────────────────────────────────────────
 
 export function EvalRunner() {
-  const { backends, collectionName } = useVaraStore();
+  const { backends, collections } = useVaraStore();
 
   // Config
-  const [source,      setSource]      = useState<Source>("csv");
-  const [sourcePath,  setSourcePath]  = useState("");
-  const [nSamples,    setNSamples]    = useState("50");
-  const [backendName, setBackendName] = useState(backends[0]?.name ?? "");
+  const [source,         setSource]         = useState<Source>("csv");
+  const [sourcePath,     setSourcePath]     = useState("");
+  const [nSamples,       setNSamples]       = useState("50");
+  const [backendName,    setBackendName]    = useState(backends[0]?.name ?? "");
+  const [collectionName, setCollectionName] = useState(
+    () => collections.find((c) => c.backend_name === (backends[0]?.name ?? ""))?.name ?? ""
+  );
   const [k, setK] = useState("10");
+
+  const collectionOptions = collections
+    .filter((c) => c.backend_name === backendName)
+    .map((c) => ({ value: c.name, label: c.name }));
+
+  function handleBackendChange(name: string) {
+    setBackendName(name);
+    setCollectionName(collections.find((c) => c.backend_name === name)?.name ?? "");
+  }
 
   // Run state
   const [status,   setStatus]   = useState<Status>("idle");
@@ -218,12 +230,21 @@ export function EvalRunner() {
           )}
 
           <div className="flex gap-3 flex-wrap">
-            <div className="flex-1 min-w-[160px]">
+            <div className="flex-1 min-w-[140px]">
               <Select
                 label="Backend"
                 options={backendOptions.length ? backendOptions : [{ value: "", label: "No backends" }]}
                 value={backendName}
-                onChange={(e) => setBackendName(e.target.value)}
+                onChange={(e) => handleBackendChange(e.target.value)}
+                disabled={status === "running"}
+              />
+            </div>
+            <div className="flex-1 min-w-[140px]">
+              <Select
+                label="Collection"
+                options={collectionOptions.length ? collectionOptions : [{ value: "", label: "No collections" }]}
+                value={collectionName}
+                onChange={(e) => setCollectionName(e.target.value)}
                 disabled={status === "running"}
               />
             </div>

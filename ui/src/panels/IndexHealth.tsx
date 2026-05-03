@@ -140,18 +140,14 @@ function BackendCard({ backend, collection, report, loading, onCheck }: BackendC
 // ── Panel ─────────────────────────────────────────────────────────────────────
 
 export function IndexHealth() {
-  const { backends, collections, collectionName } = useVaraStore();
+  const { backends, collections } = useVaraStore();
 
   const [reports, setReports] = useState<Record<string, HealthReport>>({});
   const [loading, setLoading] = useState<Record<string, boolean>>({});
   const [errors,  setErrors]  = useState<Record<string, string>>({});
 
-  // Resolve collection for a backend: prefer the globally selected one,
-  // fall back to the first collection that belongs to this backend.
   function resolveCollection(backendName: string): string {
-    if (collectionName) return collectionName;
-    const match = collections.find((c) => c.backend_name === backendName);
-    return match?.name ?? "";
+    return collections.find((c) => c.backend_name === backendName)?.name ?? "";
   }
 
   const checkOne = useCallback(
@@ -175,7 +171,7 @@ export function IndexHealth() {
       }
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [collections, collectionName],
+    [collections],
   );
 
   const checkAll = useCallback(() => {

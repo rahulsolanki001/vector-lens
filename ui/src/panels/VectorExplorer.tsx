@@ -384,24 +384,36 @@ function HUD({
 // ── Panel ─────────────────────────────────────────────────────────────────────
 
 export function VectorExplorer() {
-  const { backends, collectionName, explorerSeedIds, explorerSeedBackend, clearExplorerSeed } = useVaraStore();
+  const { backends, collections, explorerSeedIds, explorerSeedBackend, clearExplorerSeed } = useVaraStore();
 
   const hadSeed = useRef(explorerSeedIds.length > 0);
 
   // Controls — pre-populated from QueryDebugger jump if seed is present
-  const [idsText,      setIdsText]      = useState(
+  const initBackend = explorerSeedIds.length > 0 && explorerSeedBackend
+    ? explorerSeedBackend
+    : backends[0]?.name ?? "";
+
+  const [idsText,        setIdsText]        = useState(
     explorerSeedIds.length > 0 ? explorerSeedIds.join(", ") : ""
   );
-  const [backendName,  setBackendName]  = useState(
-    explorerSeedIds.length > 0 && explorerSeedBackend
-      ? explorerSeedBackend
-      : backends[0]?.name ?? ""
+  const [backendName,    setBackendName]    = useState(initBackend);
+  const [collectionName, setCollectionName] = useState(
+    () => collections.find((c) => c.backend_name === initBackend)?.name ?? ""
   );
   const [algorithm,    setAlgorithm]    = useState<"umap" | "tsne">("umap");
   const [viewMode,     setViewMode]     = useState<"3d" | "2d">("3d");
   const [nNeighbors,   setNNeighbors]   = useState("15");
   const [minDist,      setMinDist]      = useState("0.1");
   const [colorByField, setColorByField] = useState("tenant_id");
+
+  const collectionOptions = collections
+    .filter((c) => c.backend_name === backendName)
+    .map((c) => ({ value: c.name, label: c.name }));
+
+  function handleBackendChange(name: string) {
+    setBackendName(name);
+    setCollectionName(collections.find((c) => c.backend_name === name)?.name ?? "");
+  }
 
   // Run state
   const [status,    setStatus]    = useState<Status>("idle");
@@ -623,7 +635,16 @@ export function VectorExplorer() {
                 label="Backend"
                 options={backendOptions.length ? backendOptions : [{ value: "", label: "No backends" }]}
                 value={backendName}
-                onChange={(e) => setBackendName(e.target.value)}
+                onChange={(e) => handleBackendChange(e.target.value)}
+                disabled={status === "running"}
+              />
+            </div>
+            <div className="w-36 shrink-0">
+              <Select
+                label="Collection"
+                options={collectionOptions.length ? collectionOptions : [{ value: "", label: "No collections" }]}
+                value={collectionName}
+                onChange={(e) => setCollectionName(e.target.value)}
                 disabled={status === "running"}
               />
             </div>

@@ -13,7 +13,7 @@ import { useVaraStore } from "../store";
 import { Card } from "../components/ui/Card";
 import { Badge } from "../components/ui/Badge";
 import { Button } from "../components/ui/Button";
-import { Input, Textarea } from "../components/ui/Input";
+import { Input, Textarea, Select } from "../components/ui/Input";
 import { Spinner } from "../components/ui/Spinner";
 import { EmptyState } from "../components/ui/EmptyState";
 import { CodeBlock } from "../components/ui/CodeBlock";
@@ -451,7 +451,7 @@ function DiagnoseResults({
 // ── Main panel ────────────────────────────────────────────────────────────────
 
 export function QueryDebugger() {
-  const { backends, collectionName, setExplorerSeed } = useVaraStore();
+  const { backends, collections, setExplorerSeed } = useVaraStore();
   const navigate = useNavigate();
 
   const handleViewInExplorer = useCallback(
@@ -467,6 +467,7 @@ export function QueryDebugger() {
   const [topK,             setTopK]             = useState("10");
   const [filtersText,      setFiltersText]       = useState("");
   const [selectedBackends, setSelectedBackends] = useState<string[]>([]);
+  const [collectionName,   setCollectionName]   = useState(() => collections[0]?.name ?? "");
   const [mode,             setMode]             = useState<Mode>("debug");
   const [expectedIds,      setExpectedIds]       = useState("");
 
@@ -476,6 +477,13 @@ export function QueryDebugger() {
   const [error,   setError]   = useState<string | null>(null);
 
   const canCompare = selectedBackends.length === 2;
+
+  // Unique collection names scoped to selected backends (all backends when none checked)
+  const collectionOptions = (
+    selectedBackends.length > 0
+      ? collections.filter((c) => selectedBackends.includes(c.backend_name))
+      : collections
+  ).filter((c, i, arr) => arr.findIndex((x) => x.name === c.name) === i);
 
   function toggleBackend(name: string) {
     setSelectedBackends((prev) =>
@@ -571,7 +579,7 @@ export function QueryDebugger() {
             onChange={(e) => setVectorText(e.target.value)}
           />
 
-          {/* top_k + filters row */}
+          {/* top_k + collection + filters row */}
           <div className="flex gap-3 flex-wrap">
             <div className="w-24 shrink-0">
               <Input
@@ -581,6 +589,18 @@ export function QueryDebugger() {
                 max={1000}
                 value={topK}
                 onChange={(e) => setTopK(e.target.value)}
+              />
+            </div>
+            <div className="w-44 shrink-0">
+              <Select
+                label="Collection"
+                value={collectionName}
+                onChange={(e) => setCollectionName(e.target.value)}
+                options={
+                  collectionOptions.length
+                    ? collectionOptions.map((c) => ({ value: c.name, label: c.name }))
+                    : [{ value: "", label: "No collections" }]
+                }
               />
             </div>
             <div className="flex-1 min-w-[160px]">

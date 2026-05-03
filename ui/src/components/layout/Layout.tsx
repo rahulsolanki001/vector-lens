@@ -6,8 +6,7 @@ import { getConfig, getCollections } from "../../api/client";
 import { useVaraStore } from "../../store";
 
 export function Layout() {
-  const { setBackends, setCollections, setBackendName, setCollectionName, backends } =
-    useVaraStore();
+  const { setBackends, setCollections, backends } = useVaraStore();
 
   useEffect(() => {
     async function bootstrap() {
@@ -15,14 +14,6 @@ export function Layout() {
         const [config, collections] = await Promise.all([getConfig(), getCollections()]);
         setBackends(config.backends);
         setCollections(collections);
-
-        // Auto-select first backend + collection if only one exists
-        if (config.backends.length === 1) {
-          setBackendName(config.backends[0].name);
-        }
-        if (collections.length === 1) {
-          setCollectionName(collections[0].name);
-        }
       } catch {
         // Server may not be running yet; silently ignore
       }
