@@ -128,14 +128,13 @@ Full implementation using `AsyncQdrantClient`:
 #### Step 1.3 — Adapter registry (`adapters/__init__.py`) ✅
 `build_adapter(config)` factory with lazy imports — missing optional dependencies only raise at instantiation time, not at `import vara`.
 
-#### Step 1.4 — Pinecone adapter (`adapters/pinecone.py`) ⬜
-*Planned — Phase 1 expansion*
+#### Step 1.4 — Pinecone adapter (`adapters/pinecone.py`) ⬜ *post-v1*
+*Detailed plan in "Post-v1: Adapter Expansion" section below.*
 
-#### Step 1.5 — pgvector adapter (`adapters/pgvector.py`) ⬜
-*Planned — Phase 1 expansion*
+#### Step 1.5 — pgvector adapter (`adapters/pgvector.py`) ✅
 
-#### Step 1.6 — Milvus adapter (`adapters/milvus.py`) ⬜
-*Planned — Phase 1 expansion*
+#### Step 1.6 — Milvus adapter (`adapters/milvus.py`) ⬜ *post-v1*
+*Detailed plan in "Post-v1: Adapter Expansion" section below.*
 
 **Deliverable:** `from vara.adapters import build_adapter` + a `vara.yaml` pointing at a real Qdrant instance → working queries and health reports.
 
@@ -314,6 +313,73 @@ GET  /api/config                          → current backend names + connection
 - Export results as JSON
 
 **Deliverable:** Full working UI — all four panels functional with real Qdrant data.
+
+---
+
+### Pre-v1 Feature Enhancements
+*Features identified before the first release to make the core workflow complete and actionable. Ordered by priority.*
+
+#### Step 6.6 — Result diff table [P1] ⬜
+Fills the gap in compare mode: aggregate statistics already exist (Jaccard, Spearman ρ) but there is no per-result breakdown.
+
+**Data already in API:** `alignments[].ranks` (per-backend rank dict), `alignments[].scores`, `present_in`, `missing_from` — no backend changes needed.
+
+**New UI component** — table in compare mode results:
+- Columns: `ID · rank in A · rank in B · rank delta (Δ) · score in A · score in B · score diff · missing flag`
+- Rows for every unique ID across both backends
+- Missing flag highlights IDs present in only one backend
+- Rank delta: `rank_a − rank_b`; colour-coded positive (A ranked higher) / negative (B ranked higher)
+
+#### Step 6.7 — Query summary/verdict [P1] ⬜
+The existing `DiagnosisResult.summary` just counts ("2/3 retrieved; 1 not found"). A verdict classifies the likely root cause.
+
+**Backend change** (`vara/core/diagnose.py`): extend `_summarize()` to aggregate `findings[].code` across all diagnosed documents and produce a dominant-pattern verdict:
+- If majority have `POSSIBLE_INDEX_RECALL_ISSUE` → "Most likely: HNSW index recall too low"
+- If majority have `POSSIBLE_EMBEDDING_MISMATCH` → "Most likely: embedding mismatch"
+- If majority are `EXPECTED_DOCUMENT_NOT_FOUND` → "Most likely: documents missing from index or ID format mismatch"
+- If majority have `POSSIBLE_FILTER_EXCLUSION` → "Most likely: active filter is excluding expected documents"
+
+**UI change** (`QueryDebugger.tsx`): render verdict as a prominent coloured banner above the per-document breakdown, not a plain `<p>` tag.
+
+#### Step 6.8 — Query → Vector Explorer jump [P1] ⬜
+Ties the typical workflow together: debug → diagnose → visualise. Without this, users must manually re-enter IDs in the explorer.
+
+**State management**: add `explorerSeedIds` and `explorerQueryVector` fields to Zustand store. VectorExplorer reads these on mount and auto-triggers a projection when they are non-empty.
+
+**UI in QueryDebugger**: add a "View in Explorer" button on debug and diagnose results that:
+1. Populates `explorerSeedIds` with: retrieved IDs + expected IDs (if diagnose mode)
+2. Populates `explorerQueryVector` with the query vector
+3. Navigates to the Vector Explorer panel
+
+**UI in VectorExplorer**: on load, if seed state is present, pre-fill the ID input, fire the projection automatically, and render the query vector as a distinct marker (different shape/colour) among the projected points.
+
+#### Step 6.9 — Ground truth metric per query [P2] ⬜
+The Eval Runner computes nDCG/MRR/Recall across many queries in bulk. The QueryDebugger in diagnose mode shows per-doc rank and found/retrieved status, but no single-query aggregate metrics.
+
+**Backend change** (`vara/core/diagnose.py` or route): when `expected_ids` are provided, compute and return:
+- `recall_at_k`: how many expected IDs appeared in top-k
+- `mrr`: reciprocal rank of the first hit
+- `hit_count` / `total_expected`
+
+**UI change** (`QueryDebugger.tsx`): render three metric tiles (Recall@k, MRR, Hits) directly below the summary card in diagnose mode — same tile style as EvalRunner.
+
+---
+
+### Post-v1: Adapter Expansion
+*Milvus and Pinecone adapters are stubs today. Both require significant implementation and real-world testing before being included in a release.*
+
+#### Step 1.4 — Pinecone adapter (`adapters/pinecone.py`) ⬜ *post-v1*
+- Pinecone REST SDK (`pinecone-client`), serverless and pod index support
+- Namespace handling (maps to Vara's collection concept)
+- Metadata filter translation (`$eq`, `$in`, `$gt`, `$gte`, `$lt`, `$lte`)
+- `get_vectors()` via fetch-by-ID endpoint
+- Health: index readiness, vector count vs. capacity, replicas
+
+#### Step 1.6 — Milvus adapter (`adapters/milvus.py`) ⬜ *post-v1*
+- PyMilvus async client, schema-defined collections, partition keys
+- HNSW and IVF_FLAT index type detection for health checks
+- Filter translation (Milvus boolean expression syntax)
+- `get_vectors()` via primary-key query
 
 ---
 
