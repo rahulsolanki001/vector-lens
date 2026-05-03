@@ -5,8 +5,8 @@ Last updated: 2026-05-03 (pre-v1 feature enhancements started)
 ## Current Status
 
 Vara's Python backend and React UI are both functionally complete. Phases 0–6
-are done. Pre-v1 feature enhancements in progress: result diff table (6.6) and query
-summary/verdict (6.7) are complete. Next: query → explorer jump (6.8).
+are done. Pre-v1 feature enhancements in progress: 6.6, 6.7, and 6.8 are complete.
+Only ground truth metric per query (6.9) remains before v1.
 
 ## Done
 
@@ -161,7 +161,7 @@ Theme: dark + indigo-violet. Full design spec in `UI.md`.
 |------|------|--------|
 | 6.6 | Result diff table in compare mode — ID, rank A/B, Δ rank, score A/B, Δ score, missing flag | ✅ |
 | 6.7 | Query summary/verdict — dominant root-cause classification banner in diagnose mode | ✅ |
-| 6.8 | Query → Explorer jump — "View in Explorer" button seeds VectorExplorer with query vector + result IDs | ⬜ |
+| 6.8 | Query → Explorer jump — "View in Explorer" button seeds VectorExplorer with result IDs, auto-projects on arrival | ✅ |
 | 6.9 | Ground truth metric per query — Recall@k, MRR tiles in diagnose mode | ⬜ |
 
 ### Post-launch Fixes

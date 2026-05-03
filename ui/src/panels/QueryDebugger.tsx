@@ -1,5 +1,6 @@
 import { useState, useCallback } from "react";
-import { Play, ChevronDown, ChevronRight, AlertTriangle } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { Play, ChevronDown, ChevronRight, AlertTriangle, Telescope } from "lucide-react";
 import type {
   DebugQueryResult,
   BackendComparison,
@@ -84,39 +85,57 @@ function NativeQuery({ native }: { native: Record<string, unknown> }) {
 
 // ── Debug mode results ────────────────────────────────────────────────────────
 
-function DebugResults({ result }: { result: DebugQueryResult }) {
+function DebugResults({
+  result,
+  onViewInExplorer,
+}: {
+  result: DebugQueryResult;
+  onViewInExplorer: (ids: string[], backend: string) => void;
+}) {
   const commonIds = new Set(result.common_hit_ids);
+  const allIds = Array.from(new Set(result.results.flatMap((br) => br.result.hits.map((h) => h.id))));
+  const firstBackend = result.results[0]?.backend_name ?? "";
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-      {result.results.map((br) => (
-        <Card key={br.backend_name}>
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-sm font-semibold text-tx-primary">{br.backend_name}</span>
-            <Badge variant="info">{br.result.latency_ms.toFixed(1)}ms</Badge>
-          </div>
-          <div className="flex flex-col gap-2">
-            {br.result.hits.map((hit, i) => (
-              <HitCard
-                key={hit.id}
-                hit={hit}
-                rank={i + 1}
-                highlight={commonIds.has(hit.id) ? "common" : "unique"}
-              />
-            ))}
-            {br.result.hits.length === 0 && (
-              <p className="text-xs text-tx-muted py-4 text-center">No hits returned</p>
-            )}
-          </div>
-          <NativeQuery native={br.result.native_query} />
-        </Card>
-      ))}
-      {result.errors.map((e) => (
-        <Card key={e.backend_name}>
-          <p className="text-sm font-semibold text-tx-primary mb-1">{e.backend_name}</p>
-          <p className="text-xs text-sev-error">{e.error}</p>
-        </Card>
-      ))}
+    <div className="flex flex-col gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        {result.results.map((br) => (
+          <Card key={br.backend_name}>
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-sm font-semibold text-tx-primary">{br.backend_name}</span>
+              <Badge variant="info">{br.result.latency_ms.toFixed(1)}ms</Badge>
+            </div>
+            <div className="flex flex-col gap-2">
+              {br.result.hits.map((hit, i) => (
+                <HitCard
+                  key={hit.id}
+                  hit={hit}
+                  rank={i + 1}
+                  highlight={commonIds.has(hit.id) ? "common" : "unique"}
+                />
+              ))}
+              {br.result.hits.length === 0 && (
+                <p className="text-xs text-tx-muted py-4 text-center">No hits returned</p>
+              )}
+            </div>
+            <NativeQuery native={br.result.native_query} />
+          </Card>
+        ))}
+        {result.errors.map((e) => (
+          <Card key={e.backend_name}>
+            <p className="text-sm font-semibold text-tx-primary mb-1">{e.backend_name}</p>
+            <p className="text-xs text-sev-error">{e.error}</p>
+          </Card>
+        ))}
+      </div>
+      {allIds.length > 0 && (
+        <div className="flex justify-end">
+          <Button variant="ghost" size="sm" onClick={() => onViewInExplorer(allIds, firstBackend)}>
+            <Telescope size={13} />
+            View {allIds.length} results in Explorer
+          </Button>
+        </div>
+      )}
     </div>
   );
 }
@@ -330,7 +349,15 @@ function CompareResults({ result }: { result: BackendComparison }) {
 
 // ── Diagnose mode results ─────────────────────────────────────────────────────
 
-function DiagnoseResults({ result }: { result: DiagnosisResult }) {
+function DiagnoseResults({
+  result,
+  onViewInExplorer,
+}: {
+  result: DiagnosisResult;
+  onViewInExplorer: (ids: string[], backend: string) => void;
+}) {
+  const seedIds = Array.from(new Set([...result.retrieved_ids, ...result.expected_ids]));
+
   return (
     <div className="flex flex-col gap-4">
       {/* Verdict banner */}
@@ -348,7 +375,15 @@ function DiagnoseResults({ result }: { result: DiagnosisResult }) {
       <Card>
         <div className="flex items-center justify-between mb-2">
           <span className="text-sm font-semibold text-tx-primary">Summary</span>
-          <Badge variant="info">{result.backend_name}</Badge>
+          <div className="flex items-center gap-2">
+            <Badge variant="info">{result.backend_name}</Badge>
+            {seedIds.length > 0 && (
+              <Button variant="ghost" size="sm" onClick={() => onViewInExplorer(seedIds, result.backend_name)}>
+                <Telescope size={12} />
+                View in Explorer
+              </Button>
+            )}
+          </div>
         </div>
         <p className="text-sm text-tx-secondary">{result.summary}</p>
         {result.errors.length > 0 && (
@@ -400,7 +435,16 @@ function DiagnoseResults({ result }: { result: DiagnosisResult }) {
 // ── Main panel ────────────────────────────────────────────────────────────────
 
 export function QueryDebugger() {
-  const { backends, collectionName } = useVaraStore();
+  const { backends, collectionName, setExplorerSeed } = useVaraStore();
+  const navigate = useNavigate();
+
+  const handleViewInExplorer = useCallback(
+    (ids: string[], backend: string) => {
+      setExplorerSeed(ids, backend);
+      navigate("/explore");
+    },
+    [setExplorerSeed, navigate],
+  );
 
   // Form state
   const [vectorText,       setVectorText]       = useState("");
@@ -598,13 +642,13 @@ export function QueryDebugger() {
       )}
 
       {!loading && result && mode === "debug" && (
-        <DebugResults result={result as DebugQueryResult} />
+        <DebugResults result={result as DebugQueryResult} onViewInExplorer={handleViewInExplorer} />
       )}
       {!loading && result && mode === "compare" && (
         <CompareResults result={result as BackendComparison} />
       )}
       {!loading && result && mode === "diagnose" && (
-        <DiagnoseResults result={result as DiagnosisResult} />
+        <DiagnoseResults result={result as DiagnosisResult} onViewInExplorer={handleViewInExplorer} />
       )}
     </div>
   );

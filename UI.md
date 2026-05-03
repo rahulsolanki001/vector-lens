@@ -118,7 +118,7 @@ Extend the existing store:
 
 ```ts
 type VaraState = {
-  // Backend/collection selection (already exists)
+  // Backend/collection selection
   backendName: string
   collectionName: string
   setBackendName: (name: string) => void
@@ -129,10 +129,16 @@ type VaraState = {
   collections: CollectionInfo[]
   setBackends: (backends: BackendStatus[]) => void
   setCollections: (collections: CollectionInfo[]) => void
+
+  // Explorer jump seed — set by QueryDebugger, consumed by VectorExplorer on mount
+  explorerSeedIds: string[]
+  explorerSeedBackend: string
+  setExplorerSeed: (ids: string[], backend: string) => void
+  clearExplorerSeed: () => void
 }
 ```
 
-Backends and collections are fetched once on app mount and stored globally so every panel can read them via the sidebar selector.
+Backends and collections are fetched once on app mount and stored globally so every panel can read them via the sidebar selector. The explorer seed fields are written by QueryDebugger and cleared by VectorExplorer on arrival.
 
 ---
 
@@ -217,6 +223,9 @@ src/components/
 - Common hits highlighted in green, unique hits highlighted per backend
 - Latency shown as `Xms` badge on each backend result header
 - `native_query.sql` shown in a collapsible CodeBlock
+- **Compare mode**: result diff table shows ID, rank A/B, Δ rank, score A/B, Δ score, missing flag for every hit across both backends
+- **Diagnose mode**: amber verdict banner classifies the dominant root cause (not in index / filter exclusion / embedding mismatch / low rank)
+- **"View in Explorer" button**: appears on debug results (all hit IDs) and diagnose results (retrieved + expected IDs); seeds `explorerSeedIds` in store and navigates to `/explore`
 
 ---
 
@@ -330,6 +339,9 @@ src/components/
 - **Click to select**: locks point, slides in right-side detail panel with full payload; selected point rendered larger + white ring
 - **HUD**: top-right corner overlay — point count, algorithm name, projection elapsed time
 - **"Add more IDs"** button triggers incremental projection via `base_job_id`
+- **2D/3D toggle**: `n_components` wired through to backend; 2D disables orbit rotate and auto-rotate
+- **HDBSCAN clustering**: `POST /api/projection/{job_id}/cluster`; color-by-cluster mode with noise points in gray
+- **Explorer jump (from QueryDebugger)**: if `explorerSeedIds` is set in store on mount, `idsText` and `backendName` are pre-populated and projection fires automatically; seed is cleared after consumption
 
 **New dependency:** `@react-three/postprocessing` (wraps `postprocessing` library, compatible with fiber v8)
 
@@ -348,7 +360,13 @@ src/components/
 | 7 | QueryDebugger panel (debug + compare + diagnose modes) | ✅ done |
 | 8 | EvalRunner panel (WS streaming + Recharts chart) | ✅ done |
 | 9 | VectorExplorer panel (Three.js point cloud + WS streaming) | ✅ done |
-| 10 | VectorExplorer enhancements — bloom, payload coloring, click-select, neighbour lines | 🔲 next |
+| 10 | VectorExplorer enhancements — bloom, payload coloring, click-select, neighbour lines, auto-rotate, HUD, color legend | ✅ done |
+| 11 | VectorExplorer — 2D/3D toggle, t-SNE perplexity clamp | ✅ done |
+| 12 | VectorExplorer — HDBSCAN clustering, color-by-cluster mode | ✅ done |
+| 13 | EvalRunner — multi-source input: CSV, JSON/JSONL, Collection sample | ✅ done |
+| 14 | QueryDebugger — result diff table (compare mode) | ✅ done |
+| 15 | QueryDebugger — verdict banner (diagnose mode) | ✅ done |
+| 16 | QueryDebugger → VectorExplorer jump via Zustand seed + auto-project | ✅ done |
 
 ### Notes
 - Pinned `@react-three/drei@^9` (not v10) — fiber v8 requires React 18; drei v10 requires fiber v9 + React 19

@@ -36,20 +36,22 @@ Understand and compare retrieval behavior across backends.
 
 - **Debug mode**
   - Inspect per-backend results with latency, scores, and payloads
+  - "View in Explorer" button — jump directly to Vector Explorer with all result IDs pre-loaded
 
 - **Compare mode**
   - Quantify differences between backends:
     - Jaccard similarity
     - Rank correlation (Spearman ρ)
     - Score correlation
-  - Diff-highlighted result lists
+  - Result diff table: ID, rank in A/B, Δ rank, score in A/B, Δ score, missing flag
 
 - **Diagnose mode**
   - Explain *why expected results were not retrieved*:
     - not found
     - found but not retrieved
     - score gap from top results
-  - Provides actionable recommendations
+  - **Verdict banner** — classifies the dominant root cause: not in index, filter exclusion, embedding mismatch, or weak semantic match
+  - "View in Explorer" button — jump to Vector Explorer with retrieved + expected IDs pre-loaded
 
 Helps answer: **"Why didn't my query return what I expected?"**
 
@@ -110,6 +112,7 @@ Understand the structure of your embedding space.
   - full payload inspection in side panel
 - Incremental projection ("Add More IDs")
 - HUD: point count, algorithm, dimension, timing
+- **Jump from Query Debugger** — "View in Explorer" button seeds IDs and auto-projects on arrival
 
 Helps explain **why certain results are retrieved (or missed)**
 
@@ -119,8 +122,8 @@ Helps explain **why certain results are retrieved (or missed)**
 
 1. Run a query in **Query Debugger**
 2. Notice unexpected or missing results
-3. Use **Diagnose mode** to identify the issue
-4. Inspect vector structure in **Vector Explorer**
+3. Use **Diagnose mode** — read the verdict banner for the likely root cause
+4. Click **"View in Explorer"** — jump directly to Vector Explorer with result IDs pre-loaded
 5. Check index configuration in **Index Health**
 6. Validate improvements using **Eval Runner**
 

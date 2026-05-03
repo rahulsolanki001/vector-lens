@@ -384,11 +384,19 @@ function HUD({
 // ── Panel ─────────────────────────────────────────────────────────────────────
 
 export function VectorExplorer() {
-  const { backends, collectionName } = useVaraStore();
+  const { backends, collectionName, explorerSeedIds, explorerSeedBackend, clearExplorerSeed } = useVaraStore();
 
-  // Controls
-  const [idsText,      setIdsText]      = useState("");
-  const [backendName,  setBackendName]  = useState(backends[0]?.name ?? "");
+  const hadSeed = useRef(explorerSeedIds.length > 0);
+
+  // Controls — pre-populated from QueryDebugger jump if seed is present
+  const [idsText,      setIdsText]      = useState(
+    explorerSeedIds.length > 0 ? explorerSeedIds.join(", ") : ""
+  );
+  const [backendName,  setBackendName]  = useState(
+    explorerSeedIds.length > 0 && explorerSeedBackend
+      ? explorerSeedBackend
+      : backends[0]?.name ?? ""
+  );
   const [algorithm,    setAlgorithm]    = useState<"umap" | "tsne">("umap");
   const [viewMode,     setViewMode]     = useState<"3d" | "2d">("3d");
   const [nNeighbors,   setNNeighbors]   = useState("15");
@@ -512,6 +520,9 @@ export function VectorExplorer() {
 
   const project = useCallback(
     (baseJobId?: string) => {
+
+      console.log("calling project with job =>",baseJobId);
+      console.log(idsText);
       const ids = idsText.split(",").map((s) => s.trim()).filter(Boolean);
       if (ids.length === 0) { setErrorMsg("Enter at least one ID"); return; }
       if (!collectionName)  { setErrorMsg("Select a collection first"); return; }
@@ -566,6 +577,15 @@ export function VectorExplorer() {
     },
     [idsText, collectionName, backendName, algorithm, viewMode, nNeighbors, minDist],
   );
+
+  // Auto-project when arriving via QueryDebugger jump (idsText already seeded at init)
+  useEffect(() => {
+    if (hadSeed.current) {
+      hadSeed.current = false;
+      clearExplorerSeed();
+      project();
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const addMore = useCallback(() => {
     if (jobId) project(jobId);
