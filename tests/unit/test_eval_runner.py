@@ -4,26 +4,23 @@ Unit tests for the eval runner using a fake adapter.
 
 from __future__ import annotations
 
-import time
-from typing import Any
-
 import pytest
 
 from vara.adapters.base import (
     CollectionInfo,
     CollectionStats,
     HealthReport,
+    QueryHit,
     QueryRequest,
     QueryResult,
-    QueryHit,
     VecDBAdapter,
     VectorRecord,
 )
 from vara.eval.loaders import EvalDataset, EvalQuery
 from vara.eval.runner import EvalProgress, run_eval
 
-
 # ── Fake adapter ──────────────────────────────────────────────────────────────
+
 
 class FakeAdapter(VecDBAdapter):
     """
@@ -62,10 +59,7 @@ class FakeAdapter(VecDBAdapter):
     async def query(self, request: QueryRequest) -> QueryResult:
         self.call_count += 1
         self.last_request = request
-        hits = [
-            QueryHit(id=doc_id, score=1.0 - i * 0.1)
-            for i, doc_id in enumerate(self._hit_ids)
-        ]
+        hits = [QueryHit(id=doc_id, score=1.0 - i * 0.1) for i, doc_id in enumerate(self._hit_ids)]
         return QueryResult(
             hits=hits,
             total_hits=len(hits),
@@ -82,6 +76,7 @@ class FakeAdapter(VecDBAdapter):
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
+
 
 def _make_dataset(queries: list[EvalQuery], name: str = "test") -> EvalDataset:
     return EvalDataset(name=name, queries=queries)
@@ -108,6 +103,7 @@ async def _collect(gen) -> list[EvalProgress]:
 
 
 # ── Tests ─────────────────────────────────────────────────────────────────────
+
 
 @pytest.mark.unit
 @pytest.mark.asyncio
@@ -155,10 +151,12 @@ async def test_perfect_retrieval_scores_one() -> None:
 @pytest.mark.asyncio
 async def test_metrics_are_running_means() -> None:
     # q1: doc1 is hit (score=1.0), q2: doc3 is a miss (score=0.0)
-    dataset = _make_dataset([
-        _make_query("q1", {"doc1"}),
-        _make_query("q2", {"doc3"}),
-    ])
+    dataset = _make_dataset(
+        [
+            _make_query("q1", {"doc1"}),
+            _make_query("q2", {"doc3"}),
+        ]
+    )
     adapter = FakeAdapter(hit_ids=["doc1", "doc2"])
 
     events = await _collect(run_eval(dataset, "col", adapter, metrics=["recall"]))
@@ -219,8 +217,8 @@ async def test_dim_truncations_add_extra_metric_keys() -> None:
     )
     final = events[-1]
 
-    assert "recall" in final.metrics        # full vector
-    assert "recall_dim4" in final.metrics   # truncated vector
+    assert "recall" in final.metrics  # full vector
+    assert "recall_dim4" in final.metrics  # truncated vector
 
 
 @pytest.mark.unit
@@ -256,9 +254,7 @@ async def test_latency_only_from_full_vector_pass() -> None:
     dataset = _make_dataset([_make_query("q1", {"doc1"}, dim=4)])
     adapter = FakeAdapter(hit_ids=["doc1"], latency_ms=7.0)
 
-    events = await _collect(
-        run_eval(dataset, "col", adapter, dim_truncations=[2])
-    )
+    events = await _collect(run_eval(dataset, "col", adapter, dim_truncations=[2]))
 
     # Only 1 latency sample (from full-vector pass) → p50 = 7.0
     assert events[-1].latency_ms["p50"] == pytest.approx(7.0)

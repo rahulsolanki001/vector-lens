@@ -224,10 +224,7 @@ async def compare_backends(
 
 
 def _hit_ids_by_backend(results: Sequence[BackendQueryResult]) -> dict[str, list[str]]:
-    return {
-        result.backend_name: [hit.id for hit in result.hits]
-        for result in results
-    }
+    return {result.backend_name: [hit.id for hit in result.hits] for result in results}
 
 
 def _common_hit_ids(hit_ids_by_backend: dict[str, list[str]]) -> list[str]:

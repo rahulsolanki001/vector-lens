@@ -18,8 +18,7 @@ try:
     import asyncpg
 except ImportError as exc:
     raise ImportError(
-        "asyncpg is required for the pgvector adapter.\n"
-        "Install it with: pip install vara[pgvector]"
+        "asyncpg is required for the pgvector adapter.\nInstall it with: pip install vara[pgvector]"
     ) from exc
 
 from vara.adapters.base import (
@@ -40,8 +39,8 @@ from vara.adapters.base import (
 # pgvector index operator class → Vara distance metric name
 _OP_TO_METRIC: dict[str, str] = {
     "vector_cosine_ops": "cosine",
-    "vector_ip_ops":     "dot",
-    "vector_l2_ops":     "euclidean",
+    "vector_ip_ops": "dot",
+    "vector_l2_ops": "euclidean",
 }
 
 
@@ -73,6 +72,7 @@ def _detect_metric(index_rows: list[Any]) -> str:
 
 
 # ── Filter translation ────────────────────────────────────────────────────────
+
 
 def _build_where(
     filters: dict[str, Any],
@@ -131,6 +131,7 @@ def _build_where(
 
 # ── Vector parsing ────────────────────────────────────────────────────────────
 
+
 def _parse_vector(raw: Any) -> list[float]:
     """
     Convert whatever asyncpg returns for a vector column into list[float].
@@ -141,11 +142,12 @@ def _parse_vector(raw: Any) -> list[float]:
     if isinstance(raw, (list, tuple)):
         return [float(x) for x in raw]
     if hasattr(raw, "tolist"):
-        return raw.tolist()
+        return [float(x) for x in raw.tolist()]
     return [float(x) for x in str(raw).strip("[]").split(",")]
 
 
 # ── Adapter ───────────────────────────────────────────────────────────────────
+
 
 class PgvectorAdapter(VecDBAdapter):
     """
@@ -227,13 +229,15 @@ class PgvectorAdapter(VecDBAdapter):
             # atttypmod stores the vector dimension directly for pgvector columns
             dimension = int(dim_row["atttypmod"]) if dim_row and dim_row["atttypmod"] > 0 else 0
 
-        return [CollectionInfo(
-            name=table,
-            vector_count=row_count,
-            dimension=dimension,
-            distance_metric=self._distance_metric,
-            backend_name=self.name,
-        )]
+        return [
+            CollectionInfo(
+                name=table,
+                vector_count=row_count,
+                dimension=dimension,
+                distance_metric=self._distance_metric,
+                backend_name=self.name,
+            )
+        ]
 
     async def collection_stats(self, collection: str) -> CollectionStats:
         table = self._config.table
@@ -249,7 +253,8 @@ class PgvectorAdapter(VecDBAdapter):
                 JOIN   pg_class c ON a.attrelid = c.oid
                 WHERE  c.relname = $1 AND a.attname = $2
                 """,
-                table, vec_col,
+                table,
+                vec_col,
             )
             dimension = int(dim_row["atttypmod"]) if dim_row and dim_row["atttypmod"] > 0 else 0
 
@@ -321,16 +326,10 @@ class PgvectorAdapter(VecDBAdapter):
         if request.with_vectors:
             select_cols += f', "{vec_col}"::text AS _vec'
 
-        sql = (
-            f'SELECT {select_cols} '
-            f'FROM "{table}" '
-            f'{where} '
-            f'ORDER BY {order} '
-            f'LIMIT {limit}'
-        )
+        sql = f'SELECT {select_cols} FROM "{table}" {where} ORDER BY {order} LIMIT {limit}'
 
         native_query: dict[str, Any] = {
-            "sql": sql.replace(f"$1", f"[{len(request.vector)}-dim vector]"),
+            "sql": sql.replace("$1", f"[{len(request.vector)}-dim vector]"),
             "params": filter_params[1:],  # omit the vector itself
         }
 
@@ -349,12 +348,14 @@ class PgvectorAdapter(VecDBAdapter):
             if request.with_vectors and "_vec" in row.keys():
                 vector = _parse_vector(row["_vec"])
 
-            hits.append(QueryHit(
-                id=str(row[id_col]),
-                score=float(row["score"]),
-                payload=payload,
-                vector=vector,
-            ))
+            hits.append(
+                QueryHit(
+                    id=str(row[id_col]),
+                    score=float(row["score"]),
+                    payload=payload,
+                    vector=vector,
+                )
+            )
 
         return QueryResult(
             hits=hits,
@@ -408,13 +409,15 @@ class PgvectorAdapter(VecDBAdapter):
                 backend_name=self.name,
                 collection=table,
                 status="unhealthy",
-                findings=[HealthFinding(
-                    severity="error",
-                    code="unreachable",
-                    message="Cannot connect to PostgreSQL.",
-                    detail=str(exc),
-                    recommendation="Check the DSN in vara.yaml and that PostgreSQL is running.",
-                )],
+                findings=[
+                    HealthFinding(
+                        severity="error",
+                        code="unreachable",
+                        message="Cannot connect to PostgreSQL.",
+                        detail=str(exc),
+                        recommendation="Check the DSN in vara.yaml and that PostgreSQL is running.",
+                    )
+                ],
                 latency_ms=round((time.perf_counter() - t0) * 1000, 3),
             )
 
@@ -424,26 +427,30 @@ class PgvectorAdapter(VecDBAdapter):
                 "SELECT extversion FROM pg_extension WHERE extname = 'vector'"
             )
             if not ext:
-                findings.append(HealthFinding(
-                    severity="error",
-                    code="pgvector_not_installed",
-                    message="pgvector extension is not installed in this database.",
-                    detail="pg_extension WHERE extname='vector' returned no rows.",
-                    recommendation="Run: CREATE EXTENSION IF NOT EXISTS vector;",
-                ))
+                findings.append(
+                    HealthFinding(
+                        severity="error",
+                        code="pgvector_not_installed",
+                        message="pgvector extension is not installed in this database.",
+                        detail="pg_extension WHERE extname='vector' returned no rows.",
+                        recommendation="Run: CREATE EXTENSION IF NOT EXISTS vector;",
+                    )
+                )
 
             # ── 3. Table exists? ──────────────────────────────────────────────
             table_exists: bool = await conn.fetchval(
                 "SELECT EXISTS (SELECT FROM pg_tables WHERE tablename = $1)", table
             )
             if not table_exists:
-                findings.append(HealthFinding(
-                    severity="error",
-                    code="table_not_found",
-                    message=f"Table '{table}' does not exist.",
-                    detail=f"tablename={table}",
-                    recommendation="Check the 'table' field in vara.yaml.",
-                ))
+                findings.append(
+                    HealthFinding(
+                        severity="error",
+                        code="table_not_found",
+                        message=f"Table '{table}' does not exist.",
+                        detail=f"tablename={table}",
+                        recommendation="Check the 'table' field in vara.yaml.",
+                    )
+                )
                 return HealthReport(
                     backend_name=self.name,
                     collection=table,
@@ -459,34 +466,39 @@ class PgvectorAdapter(VecDBAdapter):
                 WHERE tablename = $1
                   AND indexdef ILIKE '%' || $2 || '%'
                 """,
-                table, vec_col,
+                table,
+                vec_col,
             )
-            has_hnsw    = any("hnsw"    in r["indexdef"].lower() for r in index_rows)
+            has_hnsw = any("hnsw" in r["indexdef"].lower() for r in index_rows)
             has_ivfflat = any("ivfflat" in r["indexdef"].lower() for r in index_rows)
 
             if not has_hnsw and not has_ivfflat:
-                findings.append(HealthFinding(
-                    severity="warning",
-                    code="no_vector_index",
-                    message=f"No HNSW or IVFFlat index on column '{vec_col}'.",
-                    detail=f"table={table}, column={vec_col}",
-                    recommendation=(
-                        f"Create an HNSW index:\n"
-                        f"  CREATE INDEX ON {table} "
-                        f"USING hnsw ({vec_col} vector_cosine_ops);"
-                    ),
-                ))
+                findings.append(
+                    HealthFinding(
+                        severity="warning",
+                        code="no_vector_index",
+                        message=f"No HNSW or IVFFlat index on column '{vec_col}'.",
+                        detail=f"table={table}, column={vec_col}",
+                        recommendation=(
+                            f"Create an HNSW index:\n"
+                            f"  CREATE INDEX ON {table} "
+                            f"USING hnsw ({vec_col} vector_cosine_ops);"
+                        ),
+                    )
+                )
 
             # ── 5. Empty table? ───────────────────────────────────────────────
             row_count: int = await conn.fetchval(f'SELECT COUNT(*) FROM "{table}"') or 0
             if row_count == 0:
-                findings.append(HealthFinding(
-                    severity="warning",
-                    code="empty_table",
-                    message=f"Table '{table}' contains no rows.",
-                    detail="COUNT(*)=0",
-                    recommendation="Insert data before running queries.",
-                ))
+                findings.append(
+                    HealthFinding(
+                        severity="warning",
+                        code="empty_table",
+                        message=f"Table '{table}' contains no rows.",
+                        detail="COUNT(*)=0",
+                        recommendation="Insert data before running queries.",
+                    )
+                )
 
         try:
             stats = await self.collection_stats(table)
@@ -494,8 +506,10 @@ class PgvectorAdapter(VecDBAdapter):
             stats = None
 
         severities = {f.severity for f in findings}
-        status = "unhealthy" if "error" in severities else (
-            "degraded" if "warning" in severities else "healthy"
+        status = (
+            "unhealthy"
+            if "error" in severities
+            else ("degraded" if "warning" in severities else "healthy")
         )
 
         return HealthReport(

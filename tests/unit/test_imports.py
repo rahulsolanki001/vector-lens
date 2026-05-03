@@ -32,9 +32,9 @@ def test_core_imports() -> None:
 def test_config_imports() -> None:
     from vara.config import BackendConfig, VaraConfig, VaraSettings
 
-    config = VaraConfig(vara=VaraSettings(), backends=[
-        BackendConfig(name="local-qdrant", type="qdrant")
-    ])
+    config = VaraConfig(
+        vara=VaraSettings(), backends=[BackendConfig(name="local-qdrant", type="qdrant")]
+    )
 
     assert config.backend_names == ["local-qdrant"]
 

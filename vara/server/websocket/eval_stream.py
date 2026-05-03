@@ -10,6 +10,7 @@ them as JSON until the job completes or errors.
 
 from __future__ import annotations
 
+import asyncio
 from typing import Any
 
 from fastapi import WebSocket, WebSocketDisconnect
@@ -24,7 +25,7 @@ async def stream_eval_job(
 ) -> None:
     await websocket.accept()
 
-    eval_jobs: dict = state.eval_jobs
+    eval_jobs: dict[str, asyncio.Queue[Any]] = state.eval_jobs
     queue = eval_jobs.get(job_id)
 
     if queue is None:

@@ -137,8 +137,7 @@ async def diagnose_retrieval(
     hit_count = sum(1 for d in diagnoses if d.retrieved)
     recall_at_k = hit_count / total_expected if total_expected > 0 else None
     mrr = (
-        sum(1.0 / d.rank for d in diagnoses if d.retrieved and d.rank is not None)
-        / total_expected
+        sum(1.0 / d.rank for d in diagnoses if d.retrieved and d.rank is not None) / total_expected
         if total_expected > 0
         else None
     )
@@ -213,16 +212,18 @@ def _diagnose_expected_id(
         )
 
     if record is None:
-        findings.append(DiagnosisFinding(
-            severity=SEVERITY_ERROR,
-            code=EXPECTED_DOCUMENT_NOT_FOUND,
-            message=f"Expected document '{expected_id}' was not found by ID lookup.",
-            detail="adapter.get_vectors returned no record for this ID",
-            recommendation=(
-                "Verify the document ID, collection name, and whether the document "
-                "was inserted into this backend."
-            ),
-        ))
+        findings.append(
+            DiagnosisFinding(
+                severity=SEVERITY_ERROR,
+                code=EXPECTED_DOCUMENT_NOT_FOUND,
+                message=f"Expected document '{expected_id}' was not found by ID lookup.",
+                detail="adapter.get_vectors returned no record for this ID",
+                recommendation=(
+                    "Verify the document ID, collection name, and whether the document "
+                    "was inserted into this backend."
+                ),
+            )
+        )
 
         return ExpectedDocumentDiagnosis(
             id=expected_id,
@@ -231,49 +232,57 @@ def _diagnose_expected_id(
             findings=findings,
         )
 
-    findings.append(DiagnosisFinding(
-        severity=SEVERITY_WARNING,
-        code=EXPECTED_DOCUMENT_NOT_RETRIEVED,
-        message=f"Expected document '{expected_id}' exists but was not in the top {top_k}.",
-        detail="document exists by ID lookup but did not appear in query results",
-        recommendation=(
-            "Inspect the embedding for this document and compare it with the query. "
-            "If approximate search is enabled, also review index recall settings."
-        ),
-    ))
+    findings.append(
+        DiagnosisFinding(
+            severity=SEVERITY_WARNING,
+            code=EXPECTED_DOCUMENT_NOT_RETRIEVED,
+            message=f"Expected document '{expected_id}' exists but was not in the top {top_k}.",
+            detail="document exists by ID lookup but did not appear in query results",
+            recommendation=(
+                "Inspect the embedding for this document and compare it with the query. "
+                "If approximate search is enabled, also review index recall settings."
+            ),
+        )
+    )
 
     if filters:
-        findings.append(DiagnosisFinding(
-            severity=SEVERITY_WARNING,
-            code=POSSIBLE_FILTER_EXCLUSION,
-            message="Filters may be excluding this expected document.",
-            detail=f"filters={filters}",
-            recommendation=(
-                "Compare the document payload with the query filter and inspect the "
-                "adapter native_query translation."
-            ),
-        ))
+        findings.append(
+            DiagnosisFinding(
+                severity=SEVERITY_WARNING,
+                code=POSSIBLE_FILTER_EXCLUSION,
+                message="Filters may be excluding this expected document.",
+                detail=f"filters={filters}",
+                recommendation=(
+                    "Compare the document payload with the query filter and inspect the "
+                    "adapter native_query translation."
+                ),
+            )
+        )
     else:
-        findings.append(DiagnosisFinding(
-            severity=SEVERITY_INFO,
-            code=POSSIBLE_EMBEDDING_MISMATCH,
-            message="The document may be embedded far from the query.",
-            detail="no filter was applied, so ranking is likely driven by vector distance",
-            recommendation=(
-                "Check chunk text, embedding model version, normalization, and whether "
-                "query/document embeddings were produced by the same model."
-            ),
-        ))
-        findings.append(DiagnosisFinding(
-            severity=SEVERITY_INFO,
-            code=POSSIBLE_INDEX_RECALL_ISSUE,
-            message="Approximate index recall could also be a factor.",
-            detail="document exists but was absent from the inspected result window",
-            recommendation=(
-                "Run a deeper top_k query or compare against exact search if the "
-                "backend supports it."
-            ),
-        ))
+        findings.append(
+            DiagnosisFinding(
+                severity=SEVERITY_INFO,
+                code=POSSIBLE_EMBEDDING_MISMATCH,
+                message="The document may be embedded far from the query.",
+                detail="no filter was applied, so ranking is likely driven by vector distance",
+                recommendation=(
+                    "Check chunk text, embedding model version, normalization, and whether "
+                    "query/document embeddings were produced by the same model."
+                ),
+            )
+        )
+        findings.append(
+            DiagnosisFinding(
+                severity=SEVERITY_INFO,
+                code=POSSIBLE_INDEX_RECALL_ISSUE,
+                message="Approximate index recall could also be a factor.",
+                detail="document exists but was absent from the inspected result window",
+                recommendation=(
+                    "Run a deeper top_k query or compare against exact search if the "
+                    "backend supports it."
+                ),
+            )
+        )
 
     return ExpectedDocumentDiagnosis(
         id=expected_id,
@@ -357,10 +366,22 @@ def _classify_verdict(
             low_rank += 1
 
     tally: list[tuple[int, str]] = [
-        (not_found,       "Most likely: documents not in index — verify IDs, collection name, and whether data was inserted."),
-        (filter_issue,    "Most likely: active filter is excluding expected documents — inspect payload values and the native_query filter translation."),
-        (embedding_issue, "Most likely: embedding mismatch or index recall too low — check embedding model version, normalization, and consider increasing top_k."),
-        (low_rank,        "Most likely: weak semantic match — expected documents were retrieved but ranked low. Inspect chunk quality and embedding similarity."),
+        (
+            not_found,
+            "Most likely: documents not in index — verify IDs, collection name, and whether data was inserted.",
+        ),
+        (
+            filter_issue,
+            "Most likely: active filter is excluding expected documents — inspect payload values and the native_query filter translation.",
+        ),
+        (
+            embedding_issue,
+            "Most likely: embedding mismatch or index recall too low — check embedding model version, normalization, and consider increasing top_k.",
+        ),
+        (
+            low_rank,
+            "Most likely: weak semantic match — expected documents were retrieved but ranked low. Inspect chunk quality and embedding similarity.",
+        ),
     ]
     tally.sort(key=lambda t: t[0], reverse=True)
 

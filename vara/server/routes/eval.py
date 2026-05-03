@@ -17,11 +17,14 @@ from pydantic import BaseModel, Field
 
 from vara.adapters.base import VecDBAdapter
 from vara.eval.loaders import CSVLoader, EvalDataset, JSONLoader
-from vara.eval.runner import EvalProgress, run_eval
+from vara.eval.runner import run_eval
 from vara.eval.sampler import sample_collection
 from vara.server.deps import get_adapters, get_eval_jobs, require_adapter
 
 router = APIRouter(prefix="/eval", tags=["eval"])
+
+# Strong references to background eval tasks so they aren't GC'd before completion
+_eval_tasks: set[asyncio.Task[None]] = set()
 
 
 class EvalRunRequest(BaseModel):
@@ -71,23 +74,21 @@ async def run_eval_route(
             else:
                 dataset = JSONLoader().load(body.source_path)
         except (FileNotFoundError, ValueError) as exc:
-            raise HTTPException(status_code=400, detail=str(exc))
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
 
     else:  # collection
         try:
-            dataset = await sample_collection(
-                adapter, body.collection, n_samples=body.n_samples
-            )
+            dataset = await sample_collection(adapter, body.collection, n_samples=body.n_samples)
         except ValueError as exc:
-            raise HTTPException(status_code=400, detail=str(exc))
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
 
     job_id = uuid.uuid4().hex
     queue: asyncio.Queue[Any] = asyncio.Queue()
     eval_jobs[job_id] = queue
 
-    asyncio.create_task(
-        _run_eval_task(dataset, body.collection, adapter, body, queue)
-    )
+    task = asyncio.create_task(_run_eval_task(dataset, body.collection, adapter, body, queue))
+    _eval_tasks.add(task)
+    task.add_done_callback(_eval_tasks.discard)
 
     return EvalRunResponse(job_id=job_id, total_queries=dataset.query_count)
 

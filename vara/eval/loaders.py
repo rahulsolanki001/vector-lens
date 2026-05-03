@@ -75,9 +75,7 @@ class JSONLoader:
         else:
             records = json.loads(raw)
             if not isinstance(records, list):
-                raise ValueError(
-                    f"JSON dataset '{json_path}' must be an array of objects."
-                )
+                raise ValueError(f"JSON dataset '{json_path}' must be an array of objects.")
 
         if not records:
             raise ValueError(f"JSON dataset '{json_path}' contains no records.")
@@ -165,8 +163,7 @@ def _pick_column(normalized: dict[str, str], aliases: list[str]) -> str:
             return normalized[alias]
 
     raise ValueError(
-        "CSV dataset is missing required column. "
-        f"Expected one of: {', '.join(aliases)}."
+        f"CSV dataset is missing required column. Expected one of: {', '.join(aliases)}."
     )
 
 
@@ -239,19 +236,17 @@ def _parse_json_record(record: dict[str, Any], record_number: int) -> EvalQuery:
             f"Expected one of: {', '.join(options)}."
         )
 
-    raw_id      = str(_get(["id", "query_id", "qid"], "id"))
-    raw_text    = str(_get(["text", "query"], "text"))
-    raw_vector  = _get(["vector", "query_vector", "embedding"], "vector")
-    raw_rel     = _get(["relevant_ids", "relevant", "doc_ids", "expected_ids"], "relevant_ids")
+    raw_id = str(_get(["id", "query_id", "qid"], "id"))
+    raw_text = str(_get(["text", "query"], "text"))
+    raw_vector = _get(["vector", "query_vector", "embedding"], "vector")
+    raw_rel = _get(["relevant_ids", "relevant", "doc_ids", "expected_ids"], "relevant_ids")
 
     # Vector: already a list or a JSON string
     if isinstance(raw_vector, list):
         try:
             vector = [float(v) for v in raw_vector]
         except (TypeError, ValueError) as exc:
-            raise ValueError(
-                f"JSON record {record_number} has a non-numeric vector."
-            ) from exc
+            raise ValueError(f"JSON record {record_number} has a non-numeric vector.") from exc
     else:
         vector = _parse_vector(str(raw_vector), record_number)
 

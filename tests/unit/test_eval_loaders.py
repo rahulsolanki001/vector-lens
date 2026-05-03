@@ -13,10 +13,12 @@ from vara.eval.loaders import CSVLoader
 def test_csv_loader_loads_json_vectors_and_relevant_ids(tmp_path) -> None:
     dataset_path = tmp_path / "queries.csv"
     dataset_path.write_text(
-        "\n".join([
-            "query_id,query,vector,relevant_ids",
-            'q1,portfolio risk,"[0.1, 0.2, 0.3]","[""doc1"", ""doc2""]"',
-        ])
+        "\n".join(
+            [
+                "query_id,query,vector,relevant_ids",
+                'q1,portfolio risk,"[0.1, 0.2, 0.3]","[""doc1"", ""doc2""]"',
+            ]
+        )
     )
 
     dataset = CSVLoader().load(dataset_path)
@@ -34,11 +36,13 @@ def test_csv_loader_loads_json_vectors_and_relevant_ids(tmp_path) -> None:
 def test_csv_loader_supports_column_aliases_and_delimited_values(tmp_path) -> None:
     dataset_path = tmp_path / "alias.csv"
     dataset_path.write_text(
-        "\n".join([
-            "qid,text,embedding,expected_ids",
-            "q1,query one,0.1 0.2 0.3,doc1|doc2|doc3",
-            'q2,query two,"0.4,0.5,0.6","doc4, doc5"',
-        ])
+        "\n".join(
+            [
+                "qid,text,embedding,expected_ids",
+                "q1,query one,0.1 0.2 0.3,doc1|doc2|doc3",
+                'q2,query two,"0.4,0.5,0.6","doc4, doc5"',
+            ]
+        )
     )
 
     dataset = CSVLoader().load(dataset_path)

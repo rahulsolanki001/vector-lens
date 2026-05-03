@@ -6,6 +6,7 @@ from the collection.  Each sampled vector becomes a query whose only relevant
 document is itself — a self-retrieval sanity check: rank-1 recall of 1.0
 means the index can always find its own vectors.
 """
+
 from __future__ import annotations
 
 import random
@@ -54,9 +55,7 @@ async def sample_collection(
 
     records = await adapter.get_vectors(collection, candidate_ids)
     if not records:
-        raise ValueError(
-            f"Adapter returned no vectors for the sampled IDs from '{collection}'."
-        )
+        raise ValueError(f"Adapter returned no vectors for the sampled IDs from '{collection}'.")
 
     # Trim to exactly n (get_vectors may return fewer if IDs are non-sequential)
     records = records[:n]

@@ -69,12 +69,14 @@ def test_rank_metrics_reject_non_positive_k(metric) -> None:
 def test_latency_percentiles_use_linear_interpolation() -> None:
     latencies = [40.0, 10.0, 20.0, 30.0]
 
-    assert latency_percentiles(latencies, [0, 50, 95, 100]) == pytest.approx({
-        0: 10.0,
-        50: 25.0,
-        95: 38.5,
-        100: 40.0,
-    })
+    assert latency_percentiles(latencies, [0, 50, 95, 100]) == pytest.approx(
+        {
+            0: 10.0,
+            50: 25.0,
+            95: 38.5,
+            100: 40.0,
+        }
+    )
 
 
 @pytest.mark.unit

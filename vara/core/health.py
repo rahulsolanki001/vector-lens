@@ -50,14 +50,8 @@ async def health_check_many(
     This helper is useful for the CLI and server routes that need a compact
     overall status while still preserving each adapter's full report.
     """
-    reports = await asyncio.gather(
-        *(health_check(adapter, collection) for adapter in adapters)
-    )
-    all_findings = [
-        finding
-        for report in reports
-        for finding in report.findings
-    ]
+    reports = await asyncio.gather(*(health_check(adapter, collection) for adapter in adapters))
+    all_findings = [finding for report in reports for finding in report.findings]
 
     return HealthCheckSummary(
         collection=collection,
@@ -68,6 +62,7 @@ async def health_check_many(
 
 __all__ = [
     "HealthCheckSummary",
+    "HealthReport",
     "health_check",
     "health_check_many",
 ]

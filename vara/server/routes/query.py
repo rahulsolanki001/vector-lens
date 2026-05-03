@@ -23,6 +23,7 @@ router = APIRouter(prefix="/query", tags=["query"])
 
 # ── Request models ────────────────────────────────────────────────────────────
 
+
 class DebugQueryRequest(BaseModel):
     vector: list[float]
     collection: str
@@ -51,6 +52,7 @@ class DiagnoseRequest(BaseModel):
 
 
 # ── Routes ────────────────────────────────────────────────────────────────────
+
 
 @router.post("/debug", response_model=DebugQueryResult)
 async def debug_query_route(

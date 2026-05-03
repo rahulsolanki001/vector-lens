@@ -27,8 +27,8 @@ class ProjectionJobStatus(str, Enum):
 class ProjectionParams(BaseModel):
     """Algorithm selection and tuning knobs for a projection run."""
 
-    algorithm: str = "umap"          # "umap" | "tsne"
-    n_components: int = 3            # 2 or 3 — output dimensionality
+    algorithm: str = "umap"  # "umap" | "tsne"
+    n_components: int = 3  # 2 or 3 — output dimensionality
 
     # UMAP params
     n_neighbors: int = 15
@@ -61,8 +61,8 @@ class ProjectionJob(BaseModel):
     params: ProjectionParams = Field(default_factory=ProjectionParams)
 
     # Progress counters
-    total: int = 0       # total vectors to project
-    projected: int = 0   # vectors projected so far
+    total: int = 0  # total vectors to project
+    projected: int = 0  # vectors projected so far
 
     # Accumulated output — full result once complete
     points: list[ProjectionPoint] = Field(default_factory=list)
@@ -71,9 +71,7 @@ class ProjectionJob(BaseModel):
     error: str = ""
 
     # Timestamps (UTC ISO-8601)
-    created_at: str = Field(
-        default_factory=lambda: datetime.now(timezone.utc).isoformat()
-    )
+    created_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
     started_at: str = ""
     finished_at: str = ""
 
@@ -96,7 +94,7 @@ class ProjectionJobStore:
 
     def __init__(self) -> None:
         self._jobs: dict[str, ProjectionJob] = {}
-        self._models: dict[str, Any] = {}   # job_id → fitted UMAP model
+        self._models: dict[str, Any] = {}  # job_id → fitted UMAP model
         self._lock = asyncio.Lock()
 
     # ── Lifecycle ─────────────────────────────────────────────────────────────
@@ -129,9 +127,7 @@ class ProjectionJobStore:
             job.total = total
             job.started_at = datetime.now(timezone.utc).isoformat()
 
-    async def add_points(
-        self, job_id: str, points: list[ProjectionPoint]
-    ) -> None:
+    async def add_points(self, job_id: str, points: list[ProjectionPoint]) -> None:
         """Append a batch of projected points and advance the progress counter."""
         async with self._lock:
             job = self._jobs[job_id]

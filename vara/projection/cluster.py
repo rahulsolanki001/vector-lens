@@ -1,4 +1,5 @@
 """HDBSCAN clustering on projected coordinates (uses scikit-learn >= 1.3)."""
+
 from __future__ import annotations
 
 import numpy as np
@@ -21,8 +22,7 @@ def run_hdbscan(
         from sklearn.cluster import HDBSCAN
     except ImportError as exc:
         raise ImportError(
-            "scikit-learn>=1.3 is required for clustering.\n"
-            "Install it with: pip install vara[viz]"
+            "scikit-learn>=1.3 is required for clustering.\nInstall it with: pip install vara[viz]"
         ) from exc
 
     if len(points) < 2:

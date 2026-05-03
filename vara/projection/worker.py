@@ -90,6 +90,7 @@ async def run_projection(
 
 # ── Sync helpers (run inside executor) ───────────────────────────────────────
 
+
 def _project(
     matrix: np.ndarray,
     params: ProjectionParams,
@@ -106,8 +107,7 @@ def _project(
             )
         return _run_tsne(matrix, params)
     raise ValueError(
-        f"Unknown projection algorithm '{params.algorithm}'. "
-        "Supported: 'umap', 'tsne'."
+        f"Unknown projection algorithm '{params.algorithm}'. Supported: 'umap', 'tsne'."
     )
 
 

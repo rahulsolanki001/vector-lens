@@ -34,7 +34,7 @@ from typing import Any
 
 from fastapi import WebSocket, WebSocketDisconnect
 
-from vara.projection.jobs import ProjectionJobStatus, ProjectionJobStore, ProjectionParams
+from vara.projection.jobs import ProjectionJobStore, ProjectionParams
 from vara.projection.worker import run_projection
 
 
@@ -44,7 +44,7 @@ async def stream_projection_job(
 ) -> None:
     await websocket.accept()
 
-    adapters: dict = state.adapters
+    adapters: dict[str, Any] = state.adapters
     store: ProjectionJobStore = state.job_store
 
     try:
@@ -61,18 +61,22 @@ async def stream_projection_job(
     base_job_id: str | None = raw.get("base_job_id")
 
     if not collection or not backend_name or not ids:
-        await websocket.send_json({
-            "type": "error",
-            "error": "Request must include 'collection', 'backend', and 'ids'.",
-        })
+        await websocket.send_json(
+            {
+                "type": "error",
+                "error": "Request must include 'collection', 'backend', and 'ids'.",
+            }
+        )
         await websocket.close()
         return
 
     if backend_name not in adapters:
-        await websocket.send_json({
-            "type": "error",
-            "error": f"Backend '{backend_name}' not found.",
-        })
+        await websocket.send_json(
+            {
+                "type": "error",
+                "error": f"Backend '{backend_name}' not found.",
+            }
+        )
         await websocket.close()
         return
 
@@ -102,12 +106,14 @@ async def stream_projection_job(
             base_job_id=base_job_id,
         ):
             current_job = store.get(job.id)
-            await websocket.send_json({
-                "type": "batch",
-                "points": [p.model_dump() for p in batch],
-                "projected": current_job.projected,
-                "total": current_job.total,
-            })
+            await websocket.send_json(
+                {
+                    "type": "batch",
+                    "points": [p.model_dump() for p in batch],
+                    "projected": current_job.projected,
+                    "total": current_job.total,
+                }
+            )
 
         await websocket.send_json({"type": "complete", "job_id": job.id})
 

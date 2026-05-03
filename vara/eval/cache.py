@@ -69,7 +69,7 @@ class EmbeddingCache:
             self._next_row = 0
 
         mode = "r+" if self._vector_path.exists() else "w+"
-        self._mmap = np.memmap(
+        self._mmap = np.memmap(  # type: ignore[call-overload]
             self._vector_path,
             dtype=np.float32,
             mode=mode,
@@ -79,7 +79,7 @@ class EmbeddingCache:
     def close(self) -> None:
         """Flush memmap and persist the index to disk."""
         if self._mmap is not None:
-            self._mmap.flush()
+            self._mmap.flush()  # type: ignore[attr-defined]
             del self._mmap
             self._mmap = None
         self._flush_index()
@@ -91,7 +91,7 @@ class EmbeddingCache:
         if row is None:
             return None
         assert self._mmap is not None
-        return self._mmap[row].tolist()
+        return [float(x) for x in self._mmap[row].tolist()]
 
     def set(self, key: str, vector: list[float]) -> None:
         """Insert or overwrite a vector in the cache."""
@@ -106,8 +106,7 @@ class EmbeddingCache:
         else:
             if self._next_row >= self._capacity:
                 raise OverflowError(
-                    f"Cache is full ({self._capacity} entries). "
-                    "Re-open with a larger capacity."
+                    f"Cache is full ({self._capacity} entries). Re-open with a larger capacity."
                 )
             row = self._next_row
             self._index[key] = row

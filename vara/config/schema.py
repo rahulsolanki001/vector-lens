@@ -47,6 +47,7 @@ _MAX_BACKENDS = 20
 
 # ── VaraSettings ──────────────────────────────────────────────────────────────
 
+
 class VaraSettings(BaseModel):
     """
     Top-level [vara] section of vara.yaml.
@@ -82,9 +83,7 @@ class VaraSettings(BaseModel):
     @classmethod
     def validate_port(cls, v: int) -> int:
         if not (1 <= v <= 65535):
-            raise ValueError(
-                f"port must be between 1 and 65535, got {v}."
-            )
+            raise ValueError(f"port must be between 1 and 65535, got {v}.")
         if v < 1024:
             # Not an error, but worth a warning — Pydantic validators can't emit
             # warnings directly, so we surface this via the description/docs.
@@ -107,13 +106,12 @@ class VaraSettings(BaseModel):
     def validate_cors_origins(cls, v: list[str]) -> list[str]:
         for origin in v:
             if not origin.startswith(("http://", "https://")):
-                raise ValueError(
-                    f"CORS origin '{origin}' must start with http:// or https://."
-                )
+                raise ValueError(f"CORS origin '{origin}' must start with http:// or https://.")
         return v
 
 
 # ── BackendConfig ─────────────────────────────────────────────────────────────
+
 
 class BackendConfig(BaseModel):
     """
@@ -137,9 +135,7 @@ class BackendConfig(BaseModel):
         ),
     )
     type: str = Field(
-        description=(
-            f"Backend type. Supported: {sorted(_VALID_BACKEND_TYPES)}."
-        ),
+        description=(f"Backend type. Supported: {sorted(_VALID_BACKEND_TYPES)}."),
     )
 
     @field_validator("name")
@@ -162,14 +158,12 @@ class BackendConfig(BaseModel):
         normalised = v.lower().strip()
         if normalised not in _VALID_BACKEND_TYPES:
             known = sorted(_VALID_BACKEND_TYPES)
-            raise ValueError(
-                f"Backend type '{v}' is not recognised. "
-                f"Valid types: {known}."
-            )
+            raise ValueError(f"Backend type '{v}' is not recognised. Valid types: {known}.")
         return normalised
 
 
 # ── VaraConfig ────────────────────────────────────────────────────────────────
+
 
 class VaraConfig(BaseModel):
     """
@@ -198,8 +192,7 @@ class VaraConfig(BaseModel):
         # Sanity limit
         if len(backends) > _MAX_BACKENDS:
             raise ValueError(
-                f"Too many backends configured ({len(backends)}). "
-                f"Maximum is {_MAX_BACKENDS}."
+                f"Too many backends configured ({len(backends)}). Maximum is {_MAX_BACKENDS}."
             )
 
         # Unique names
@@ -213,8 +206,7 @@ class VaraConfig(BaseModel):
 
         if duplicates:
             raise ValueError(
-                f"Backend names must be unique. "
-                f"Duplicate name(s) found: {sorted(duplicates)}."
+                f"Backend names must be unique. Duplicate name(s) found: {sorted(duplicates)}."
             )
 
         return backends
@@ -260,10 +252,7 @@ class VaraConfig(BaseModel):
             if backend.name == name:
                 return backend
         available = [b.name for b in self.backends]
-        raise KeyError(
-            f"No backend named '{name}' in config. "
-            f"Available backends: {available}."
-        )
+        raise KeyError(f"No backend named '{name}' in config. Available backends: {available}.")
 
     @property
     def backend_names(self) -> list[str]:

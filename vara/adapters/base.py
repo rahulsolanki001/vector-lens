@@ -15,6 +15,7 @@ from pydantic import BaseModel, Field
 
 # ── Shared value types ────────────────────────────────────────────────────────
 
+
 class AdapterType(str):
     QDRANT = "qdrant"
     PINECONE = "pinecone"
@@ -24,8 +25,10 @@ class AdapterType(str):
 
 # ── Config models (mirrors vara.yaml backend entries) ─────────────────────────
 
+
 class AdapterConfig(BaseModel):
     """Base config — all adapters extend this."""
+
     name: str
     type: str
 
@@ -66,16 +69,18 @@ class MilvusConfig(AdapterConfig):
 
 # ── Collection / index info ───────────────────────────────────────────────────
 
+
 class CollectionInfo(BaseModel):
     name: str
     vector_count: int
     dimension: int
-    distance_metric: str          # cosine | dot | euclidean
+    distance_metric: str  # cosine | dot | euclidean
     backend_name: str
 
 
 class CollectionStats(BaseModel):
     """Detailed stats — superset of CollectionInfo, filled by health_check."""
+
     name: str
     backend_name: str
     vector_count: int
@@ -84,7 +89,7 @@ class CollectionStats(BaseModel):
     disk_bytes: int | None = None
     ram_bytes: int | None = None
     segment_count: int | None = None
-    index_type: str | None = None       # hnsw | ivf_flat | flat | etc.
+    index_type: str | None = None  # hnsw | ivf_flat | flat | etc.
     index_params: dict[str, Any] = Field(default_factory=dict)
     payload_indexes: list[str] = Field(default_factory=list)
     # Raw adapter-specific extras (Qdrant optimizer state, Milvus load state, etc.)
@@ -93,11 +98,12 @@ class CollectionStats(BaseModel):
 
 # ── Query models ──────────────────────────────────────────────────────────────
 
+
 class QueryRequest(BaseModel):
     collection: str
     vector: list[float]
     top_k: int = 10
-    filters: dict[str, Any] | None = None    # Vara-canonical filter format
+    filters: dict[str, Any] | None = None  # Vara-canonical filter format
     with_payload: bool = True
     with_vectors: bool = False
 
@@ -121,6 +127,7 @@ class QueryResult(BaseModel):
 
 # ── Vector record (for fetching by ID) ───────────────────────────────────────
 
+
 class VectorRecord(BaseModel):
     id: str
     vector: list[float]
@@ -130,24 +137,26 @@ class VectorRecord(BaseModel):
 
 # ── Health report ─────────────────────────────────────────────────────────────
 
+
 class HealthFinding(BaseModel):
-    severity: str                  # error | warning | info
-    code: str                      # machine-readable, e.g. "missing_payload_index"
-    message: str                   # human-readable
-    detail: str = ""               # extra context (raw metric that triggered this)
+    severity: str  # error | warning | info
+    code: str  # machine-readable, e.g. "missing_payload_index"
+    message: str  # human-readable
+    detail: str = ""  # extra context (raw metric that triggered this)
     recommendation: str = ""
 
 
 class HealthReport(BaseModel):
     backend_name: str
     collection: str
-    status: str                    # healthy | degraded | unhealthy
+    status: str  # healthy | degraded | unhealthy
     findings: list[HealthFinding] = Field(default_factory=list)
     stats: CollectionStats | None = None
     latency_ms: float = 0.0
 
 
 # ── Abstract adapter ──────────────────────────────────────────────────────────
+
 
 class VecDBAdapter(ABC):
     """

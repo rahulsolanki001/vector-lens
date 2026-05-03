@@ -20,6 +20,7 @@ import sys
 import threading
 import webbrowser
 from pathlib import Path
+from typing import Any
 
 import typer
 from rich.console import Console
@@ -57,10 +58,13 @@ def serve(
     console.print(f"[bold green]Vara[/bold green] starting on {url}")
 
     if not no_browser:
+
         def _open() -> None:
             import time
+
             time.sleep(1.2)
             webbrowser.open(url)
+
         threading.Thread(target=_open, daemon=True).start()
 
     if reload:
@@ -74,6 +78,7 @@ def serve(
         )
     else:
         from vara.server.app import create_app
+
         uvicorn.run(create_app(config_path=config), host="0.0.0.0", port=port)
 
 
@@ -91,7 +96,7 @@ def check(
         cfg = load_config(config)
     except FileNotFoundError as exc:
         console.print(f"[red]{exc}[/red]")
-        raise typer.Exit(code=1)
+        raise typer.Exit(code=1) from None
 
     adapter_configs = get_adapter_configs(cfg)
 
@@ -141,17 +146,15 @@ def eval_cmd(
         cfg = load_config(config)
     except FileNotFoundError as exc:
         console.print(f"[red]{exc}[/red]")
-        raise typer.Exit(code=1)
+        raise typer.Exit(code=1) from None
 
     try:
         eval_dataset = CSVLoader().load(dataset)
     except (FileNotFoundError, ValueError) as exc:
         console.print(f"[red]Dataset error:[/red] {exc}")
-        raise typer.Exit(code=1)
+        raise typer.Exit(code=1) from None
 
-    adapter_cfg = next(
-        (a for a in get_adapter_configs(cfg) if a.name == backend), None
-    )
+    adapter_cfg = next((a for a in get_adapter_configs(cfg) if a.name == backend), None)
     if adapter_cfg is None:
         console.print(f"[red]Backend '{backend}' not found in config.[/red]")
         raise typer.Exit(code=1)
@@ -198,8 +201,7 @@ def dev() -> None:
     console.print("[bold green]Vara dev mode[/bold green] — Ctrl+C to stop")
 
     server_proc = subprocess.Popen(
-        [sys.executable, "-m", "uvicorn", "vara.server.app:app",
-         "--reload", "--port", "7842"],
+        [sys.executable, "-m", "uvicorn", "vara.server.app:app", "--reload", "--port", "7842"],
         env={**os.environ, "VARA_CONFIG": "vara.yaml"},
     )
     vite_proc = subprocess.Popen(["npm", "run", "dev"], cwd=str(ui_dir))
@@ -214,6 +216,7 @@ def dev() -> None:
 
 
 # ── Pretty-print helpers ──────────────────────────────────────────────────────
+
 
 def _print_health_report(backend_name: str, collection: str, report: object) -> None:
     from vara.adapters.base import HealthReport
@@ -254,7 +257,7 @@ def _print_health_report(backend_name: str, collection: str, report: object) -> 
     console.print(table)
 
 
-def _print_eval_summary(result: dict) -> None:
+def _print_eval_summary(result: dict[str, Any]) -> None:
     table = Table(title="Eval Results", show_header=True, header_style="bold")
     table.add_column("Metric", style="cyan")
     table.add_column("Value", justify="right")

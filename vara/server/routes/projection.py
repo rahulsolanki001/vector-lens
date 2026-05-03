@@ -3,6 +3,7 @@ Projection REST routes.
 
 POST /api/projection/{job_id}/cluster — run HDBSCAN on a completed projection job.
 """
+
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -22,7 +23,7 @@ class ClusterRequest(BaseModel):
 
 class ClusterResponse(BaseModel):
     job_id: str
-    labels: dict[str, int]   # point_id → cluster label; -1 = noise
+    labels: dict[str, int]  # point_id → cluster label; -1 = noise
     n_clusters: int
     noise_count: int
 
@@ -36,8 +37,8 @@ async def cluster_projection(
     """Run HDBSCAN on the projected coordinates of a completed projection job."""
     try:
         job = store.get(job_id)
-    except KeyError:
-        raise HTTPException(status_code=404, detail=f"No projection job '{job_id}'.")
+    except KeyError as exc:
+        raise HTTPException(status_code=404, detail=f"No projection job '{job_id}'.") from exc
 
     if job.status != ProjectionJobStatus.COMPLETE:
         raise HTTPException(
@@ -55,7 +56,7 @@ async def cluster_projection(
             min_samples=req.min_samples,
         )
     except ImportError as exc:
-        raise HTTPException(status_code=501, detail=str(exc))
+        raise HTTPException(status_code=501, detail=str(exc)) from exc
 
     n_clusters = len({v for v in labels.values() if v != -1})
     noise_count = sum(1 for v in labels.values() if v == -1)

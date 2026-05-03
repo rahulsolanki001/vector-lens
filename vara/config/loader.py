@@ -21,20 +21,21 @@ from typing import Any
 
 import yaml
 
-from vara.adapters.base import AdapterConfig, QdrantConfig,PgvectorConfig
+from vara.adapters.base import AdapterConfig, PgvectorConfig, QdrantConfig
 from vara.config.schema import BackendConfig, VaraConfig
 
 # Matches ${VAR_NAME} anywhere inside a string value
 _ENV_VAR_RE = re.compile(r"\$\{([^}]+)\}")
 
 # Backend types fully implemented in this release
-_SUPPORTED_TYPES = {"qdrant","pgvector"}
+_SUPPORTED_TYPES = {"qdrant", "pgvector"}
 
 # Backend types recognised but not yet implemented
 _PLANNED_TYPES = {"pinecone", "milvus"}
 
 
 # ── Environment variable interpolation ───────────────────────────────────────
+
 
 def _interpolate(value: str) -> str:
     """
@@ -43,6 +44,7 @@ def _interpolate(value: str) -> str:
     Raises ValueError if any referenced variable is not set, so users
     get a clear error at startup rather than a silent empty string.
     """
+
     def _replace(match: re.Match[str]) -> str:
         var_name = match.group(1)
         resolved = os.environ.get(var_name)
@@ -71,7 +73,8 @@ def _interpolate_dict(data: dict[str, Any]) -> dict[str, Any]:
             result[k] = _interpolate_dict(v)
         elif isinstance(v, list):
             result[k] = [
-                _interpolate_dict(item) if isinstance(item, dict)
+                _interpolate_dict(item)
+                if isinstance(item, dict)
                 else (_interpolate(item) if isinstance(item, str) else item)
                 for item in v
             ]
@@ -81,6 +84,7 @@ def _interpolate_dict(data: dict[str, Any]) -> dict[str, Any]:
 
 
 # ── Config loading ────────────────────────────────────────────────────────────
+
 
 def load_config(path: str | Path = "vara.yaml") -> VaraConfig:
     """
@@ -122,6 +126,7 @@ def load_config(path: str | Path = "vara.yaml") -> VaraConfig:
 
 # ── Adapter config resolution ─────────────────────────────────────────────────
 
+
 def resolve_adapter_config(backend: BackendConfig) -> AdapterConfig:
     """
     Type-dispatch a raw BackendConfig into a fully-typed adapter config.
@@ -148,7 +153,7 @@ def resolve_adapter_config(backend: BackendConfig) -> AdapterConfig:
 
         case "pgvector":
             return PgvectorConfig(**data)
-        
+
         case t if t in _PLANNED_TYPES:
             raise ValueError(
                 f"Backend type '{t}' ('{backend.name}') is planned but not yet "
@@ -199,9 +204,6 @@ def get_adapter_configs(config: VaraConfig) -> list[AdapterConfig]:
             errors.append(f"  [{backend.name}]: {exc}")
 
     if errors:
-        raise ValueError(
-            "Failed to resolve one or more backend configs:\n"
-            + "\n".join(errors)
-        )
+        raise ValueError("Failed to resolve one or more backend configs:\n" + "\n".join(errors))
 
     return resolved

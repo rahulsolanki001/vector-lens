@@ -72,7 +72,9 @@ def _extract_vec_params(vec_config: Any) -> tuple[int, str]:
 
     raise ValueError(f"Unrecognised qdrant vector config type: {type(vec_config)}")
 
+
 # ── Filter translation ────────────────────────────────────────────────────────
+
 
 def _translate_filter(filters: dict[str, Any] | None) -> qmodels.Filter | None:
     """
@@ -182,6 +184,7 @@ def _filter_to_dict(f: qmodels.Filter | None) -> dict[str, Any]:
 
 # ── Adapter ───────────────────────────────────────────────────────────────────
 
+
 class QdrantAdapter(VecDBAdapter):
     """
     Qdrant implementation of VecDBAdapter.
@@ -249,8 +252,7 @@ class QdrantAdapter(VecDBAdapter):
         """Return client, raising clearly if connect() was never called."""
         if self._client is None:
             raise RuntimeError(
-                f"QdrantAdapter '{self.name}' is not connected. "
-                "Call await adapter.connect() first."
+                f"QdrantAdapter '{self.name}' is not connected. Call await adapter.connect() first."
             )
         return self._client
 
@@ -269,28 +271,30 @@ class QdrantAdapter(VecDBAdapter):
 
                 # vectors_count deprecated in Qdrant 1.9+; fall back to points_count
                 vector_count = (
-                    getattr(info, "points_count", None)
-                    or getattr(info, "vectors_count", None)
-                    or 0
+                    getattr(info, "points_count", None) or getattr(info, "vectors_count", None) or 0
                 )
 
-                result.append(CollectionInfo(
-                    name=col.name,
-                    vector_count=vector_count,
-                    dimension=dimension,
-                    distance_metric=distance,
-                    backend_name=self.name,
-                ))
+                result.append(
+                    CollectionInfo(
+                        name=col.name,
+                        vector_count=vector_count,
+                        dimension=dimension,
+                        distance_metric=distance,
+                        backend_name=self.name,
+                    )
+                )
             except Exception as exc:
                 # Don't let a single bad collection break the whole list;
                 # surface the reason in distance_metric so it's visible in the UI
-                result.append(CollectionInfo(
-                    name=col.name,
-                    vector_count=0,
-                    dimension=0,
-                    distance_metric=f"error: {exc}",
-                    backend_name=self.name,
-                ))
+                result.append(
+                    CollectionInfo(
+                        name=col.name,
+                        vector_count=0,
+                        dimension=0,
+                        distance_metric=f"error: {exc}",
+                        backend_name=self.name,
+                    )
+                )
 
         return result
 
@@ -331,9 +335,7 @@ class QdrantAdapter(VecDBAdapter):
             pass
 
         vector_count = (
-            getattr(info, "points_count", None)
-            or getattr(info, "vectors_count", None)
-            or 0
+            getattr(info, "points_count", None) or getattr(info, "vectors_count", None) or 0
         )
 
         return CollectionStats(
@@ -407,12 +409,14 @@ class QdrantAdapter(VecDBAdapter):
 
         hits: list[QueryHit] = []
         for r in raw_results:
-            hits.append(QueryHit(
-                id=str(r.id),
-                score=r.score,
-                payload=dict(r.payload) if r.payload else {},
-                vector=list(r.vector) if r.vector else None,
-            ))
+            hits.append(
+                QueryHit(
+                    id=str(r.id),
+                    score=r.score,
+                    payload=dict(r.payload) if r.payload else {},
+                    vector=list(r.vector) if r.vector else None,
+                )
+            )
 
         return QueryResult(
             hits=hits,
@@ -481,15 +485,17 @@ class QdrantAdapter(VecDBAdapter):
                 backend_name=self.name,
                 collection=collection,
                 status="unhealthy",
-                findings=[HealthFinding(
-                    severity="error",
-                    code="unreachable",
-                    message="Cannot connect to Qdrant instance.",
-                    detail=str(exc),
-                    recommendation=(
-                        "Check that Qdrant is running and the host/port in vara.yaml are correct."
-                    ),
-                )],
+                findings=[
+                    HealthFinding(
+                        severity="error",
+                        code="unreachable",
+                        message="Cannot connect to Qdrant instance.",
+                        detail=str(exc),
+                        recommendation=(
+                            "Check that Qdrant is running and the host/port in vara.yaml are correct."
+                        ),
+                    )
+                ],
                 latency_ms=round((time.perf_counter() - t0) * 1000, 3),
             )
 
@@ -501,37 +507,43 @@ class QdrantAdapter(VecDBAdapter):
                 backend_name=self.name,
                 collection=collection,
                 status="unhealthy",
-                findings=[HealthFinding(
-                    severity="error",
-                    code="collection_not_found",
-                    message=f"Collection '{collection}' not found or inaccessible.",
-                    detail=str(exc),
-                    recommendation="Check the collection name and Qdrant permissions.",
-                )],
+                findings=[
+                    HealthFinding(
+                        severity="error",
+                        code="collection_not_found",
+                        message=f"Collection '{collection}' not found or inaccessible.",
+                        detail=str(exc),
+                        recommendation="Check the collection name and Qdrant permissions.",
+                    )
+                ],
                 latency_ms=round((time.perf_counter() - t0) * 1000, 3),
             )
 
         # ── 2. Collection status ──────────────────────────────────────────────
         raw_status = stats.raw.get("status")
         if raw_status == "grey":
-            findings.append(HealthFinding(
-                severity="warning",
-                code="collection_status_grey",
-                message="Collection is in 'grey' status — optimisation is pending.",
-                detail=f"status={raw_status}",
-                recommendation=(
-                    "This is usually transient after bulk inserts. "
-                    "If it persists, check Qdrant optimizer configuration."
-                ),
-            ))
+            findings.append(
+                HealthFinding(
+                    severity="warning",
+                    code="collection_status_grey",
+                    message="Collection is in 'grey' status — optimisation is pending.",
+                    detail=f"status={raw_status}",
+                    recommendation=(
+                        "This is usually transient after bulk inserts. "
+                        "If it persists, check Qdrant optimizer configuration."
+                    ),
+                )
+            )
         elif raw_status not in ("green", None):
-            findings.append(HealthFinding(
-                severity="error",
-                code="collection_status_unhealthy",
-                message=f"Collection status is '{raw_status}'.",
-                detail=f"status={raw_status}",
-                recommendation="Inspect Qdrant logs for optimizer errors.",
-            ))
+            findings.append(
+                HealthFinding(
+                    severity="error",
+                    code="collection_status_unhealthy",
+                    message=f"Collection status is '{raw_status}'.",
+                    detail=f"status={raw_status}",
+                    recommendation="Inspect Qdrant logs for optimizer errors.",
+                )
+            )
 
         # ── 3. HNSW ef_construct vs collection size ───────────────────────────
         ef_construct = stats.index_params.get("ef_construct", 0)
@@ -541,58 +553,66 @@ class QdrantAdapter(VecDBAdapter):
             # Rule: ef_construct < 64 is risky for recall at any scale;
             # ef_construct < 128 is marginal for collections > 100k vectors.
             if ef_construct < 64:
-                findings.append(HealthFinding(
-                    severity="error",
-                    code="hnsw_ef_construct_too_low",
-                    message=f"HNSW ef_construct={ef_construct} is very low — recall will be poor.",
-                    detail=f"ef_construct={ef_construct}, vector_count={vector_count}",
-                    recommendation=(
-                        "Set ef_construct >= 100 for production workloads. "
-                        "Recreate the collection or update the index config."
-                    ),
-                ))
+                findings.append(
+                    HealthFinding(
+                        severity="error",
+                        code="hnsw_ef_construct_too_low",
+                        message=f"HNSW ef_construct={ef_construct} is very low — recall will be poor.",
+                        detail=f"ef_construct={ef_construct}, vector_count={vector_count}",
+                        recommendation=(
+                            "Set ef_construct >= 100 for production workloads. "
+                            "Recreate the collection or update the index config."
+                        ),
+                    )
+                )
             elif ef_construct < 128 and vector_count > 100_000:
-                findings.append(HealthFinding(
-                    severity="warning",
-                    code="hnsw_ef_construct_marginal",
-                    message=(
-                        f"HNSW ef_construct={ef_construct} may be low "
-                        f"for {vector_count:,} vectors."
-                    ),
-                    detail=f"ef_construct={ef_construct}, vector_count={vector_count}",
-                    recommendation=(
-                        "Consider ef_construct >= 128 for collections over 100k vectors "
-                        "to maintain recall above 0.95."
-                    ),
-                ))
+                findings.append(
+                    HealthFinding(
+                        severity="warning",
+                        code="hnsw_ef_construct_marginal",
+                        message=(
+                            f"HNSW ef_construct={ef_construct} may be low "
+                            f"for {vector_count:,} vectors."
+                        ),
+                        detail=f"ef_construct={ef_construct}, vector_count={vector_count}",
+                        recommendation=(
+                            "Consider ef_construct >= 128 for collections over 100k vectors "
+                            "to maintain recall above 0.95."
+                        ),
+                    )
+                )
 
         # ── 4. HNSW m parameter ───────────────────────────────────────────────
         m = stats.index_params.get("m", 0)
         if m and m < 8:
-            findings.append(HealthFinding(
-                severity="warning",
-                code="hnsw_m_too_low",
-                message=f"HNSW m={m} is below the recommended minimum of 8.",
-                detail=f"m={m}",
-                recommendation=(
-                    "m controls graph connectivity. Values below 8 reduce recall. "
-                    "Default is 16; use 32-64 for high-recall requirements."
-                ),
-            ))
+            findings.append(
+                HealthFinding(
+                    severity="warning",
+                    code="hnsw_m_too_low",
+                    message=f"HNSW m={m} is below the recommended minimum of 8.",
+                    detail=f"m={m}",
+                    recommendation=(
+                        "m controls graph connectivity. Values below 8 reduce recall. "
+                        "Default is 16; use 32-64 for high-recall requirements."
+                    ),
+                )
+            )
 
         # ── 5. Segment count ──────────────────────────────────────────────────
         if stats.segment_count is not None and stats.segment_count > 20:
-            findings.append(HealthFinding(
-                severity="warning",
-                code="high_segment_count",
-                message=f"High segment count ({stats.segment_count}) detected.",
-                detail=f"segment_count={stats.segment_count}",
-                recommendation=(
-                    "Many small segments increase query latency. "
-                    "Trigger compaction or review your optimizer settings "
-                    "(indexing_threshold, memmap_threshold)."
-                ),
-            ))
+            findings.append(
+                HealthFinding(
+                    severity="warning",
+                    code="high_segment_count",
+                    message=f"High segment count ({stats.segment_count}) detected.",
+                    detail=f"segment_count={stats.segment_count}",
+                    recommendation=(
+                        "Many small segments increase query latency. "
+                        "Trigger compaction or review your optimizer settings "
+                        "(indexing_threshold, memmap_threshold)."
+                    ),
+                )
+            )
 
         # ── 6. Indexing lag ───────────────────────────────────────────────────
         points_count = stats.raw.get("points_count") or 0
@@ -601,34 +621,38 @@ class QdrantAdapter(VecDBAdapter):
         if points_count > 0 and indexed_count < points_count:
             lag_pct = ((points_count - indexed_count) / points_count) * 100
             if lag_pct > 10:
-                findings.append(HealthFinding(
-                    severity="warning",
-                    code="indexing_lag",
-                    message=(
-                        f"{lag_pct:.1f}% of vectors are not yet indexed "
-                        f"({points_count - indexed_count:,} unindexed)."
-                    ),
-                    detail=f"points_count={points_count}, indexed={indexed_count}",
-                    recommendation=(
-                        "Unindexed vectors fall back to brute-force search, "
-                        "increasing latency. Wait for the optimizer to catch up, "
-                        "or increase indexing_threshold in optimizer config."
-                    ),
-                ))
+                findings.append(
+                    HealthFinding(
+                        severity="warning",
+                        code="indexing_lag",
+                        message=(
+                            f"{lag_pct:.1f}% of vectors are not yet indexed "
+                            f"({points_count - indexed_count:,} unindexed)."
+                        ),
+                        detail=f"points_count={points_count}, indexed={indexed_count}",
+                        recommendation=(
+                            "Unindexed vectors fall back to brute-force search, "
+                            "increasing latency. Wait for the optimizer to catch up, "
+                            "or increase indexing_threshold in optimizer config."
+                        ),
+                    )
+                )
 
         # ── 7. Payload indexes ────────────────────────────────────────────────
         if not stats.payload_indexes:
-            findings.append(HealthFinding(
-                severity="info",
-                code="no_payload_indexes",
-                message="No payload field indexes found on this collection.",
-                detail="payload_indexes=[]",
-                recommendation=(
-                    "If you filter by metadata fields (e.g. tenant_id, category), "
-                    "create payload indexes for those fields to avoid full scans: "
-                    "client.create_payload_index(collection, field_name, field_schema)"
-                ),
-            ))
+            findings.append(
+                HealthFinding(
+                    severity="info",
+                    code="no_payload_indexes",
+                    message="No payload field indexes found on this collection.",
+                    detail="payload_indexes=[]",
+                    recommendation=(
+                        "If you filter by metadata fields (e.g. tenant_id, category), "
+                        "create payload indexes for those fields to avoid full scans: "
+                        "client.create_payload_index(collection, field_name, field_schema)"
+                    ),
+                )
+            )
 
         # ── Determine overall status ──────────────────────────────────────────
         severities = {f.severity for f in findings}

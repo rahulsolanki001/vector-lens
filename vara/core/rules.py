@@ -17,11 +17,13 @@ SEVERITY_ERROR: Final = "error"
 SEVERITY_WARNING: Final = "warning"
 SEVERITY_INFO: Final = "info"
 
-VALID_SEVERITIES: Final = frozenset({
-    SEVERITY_ERROR,
-    SEVERITY_WARNING,
-    SEVERITY_INFO,
-})
+VALID_SEVERITIES: Final = frozenset(
+    {
+        SEVERITY_ERROR,
+        SEVERITY_WARNING,
+        SEVERITY_INFO,
+    }
+)
 
 
 # Health statuses

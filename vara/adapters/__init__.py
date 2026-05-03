@@ -41,15 +41,19 @@ def build_adapter(config: AdapterConfig) -> VecDBAdapter:
     match config.type:
         case "qdrant":
             from vara.adapters.qdrant import QdrantAdapter
+
             return QdrantAdapter(config)  # type: ignore[arg-type]
         case "pinecone":
             from vara.adapters.pinecone import PineconeAdapter
+
             return PineconeAdapter(config)  # type: ignore[arg-type]
         case "pgvector":
             from vara.adapters.pgvector import PgvectorAdapter
+
             return PgvectorAdapter(config)  # type: ignore[arg-type]
         case "milvus":
             from vara.adapters.milvus import MilvusAdapter
+
             return MilvusAdapter(config)  # type: ignore[arg-type]
         case _:
             raise ValueError(

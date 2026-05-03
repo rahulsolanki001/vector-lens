@@ -10,11 +10,11 @@ Responsibilities:
 
 from __future__ import annotations
 
-import asyncio
 import os
+from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from pathlib import Path
-from typing import AsyncIterator
+from typing import Any
 
 from fastapi import FastAPI, WebSocket
 from fastapi.middleware.cors import CORSMiddleware
@@ -39,7 +39,7 @@ _DEFAULT_CORS_ORIGINS = [
 ]
 
 
-def _make_lifespan(config_path: str):
+def _make_lifespan(config_path: str) -> Any:
     @asynccontextmanager
     async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         cfg = load_config(config_path)
@@ -54,7 +54,7 @@ def _make_lifespan(config_path: str):
         app.state.config = cfg
         app.state.adapters = adapters
         app.state.job_store = ProjectionJobStore()
-        app.state.eval_jobs: dict[str, asyncio.Queue] = {}
+        app.state.eval_jobs = {}
 
         yield
 
