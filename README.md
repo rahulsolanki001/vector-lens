@@ -1,45 +1,127 @@
 # Vara
 
-Vara is a vector database debugger and visualizer for RAG developers. It provides
-a local Python SDK and a dark-themed React UI for inspecting query behaviour,
-index health, vector-space structure, and retrieval eval results across multiple
-vector database backends simultaneously.
+**Vara is a debugging and observability tool for vector search systems.**
 
-## Features
+It helps you understand *why your RAG retrieval works—or fails* across different vector databases, index configurations, and query setups.  
+Run queries, compare backends, diagnose failures, visualize embedding structure, and evaluate retrieval quality—all in one place.
+
+---
+
+## Why Vara?
+
+Vector search failures are hard to debug. When a query gives poor results, the issue could be:
+
+- bad embeddings  
+- incorrect index configuration  
+- query parameters  
+- backend-specific behavior  
+
+Vara helps you identify the root cause.
+
+With Vara, you can:
+
+- Compare retrieval results across multiple vector databases
+- Diagnose why expected results were not retrieved
+- Inspect index health and configuration issues
+- Visualize vector space structure (clusters, overlaps, outliers)
+- Run reproducible retrieval evaluations with real metrics
+
+---
+
+## Core Features
 
 ### Query Debugger
-- Run a vector query against one or more backends and inspect results side by side
-- **Debug mode** — per-backend hit lists with latency, score bars, and payload
-- **Compare mode** — Jaccard similarity, rank Spearman ρ, score Spearman ρ, and
-  diff-highlighted hit lists between two backends
-- **Diagnose mode** — per-expected-ID findings (not found, found but not retrieved,
-  score gap to top) with actionable recommendations
+
+Understand and compare retrieval behavior across backends.
+
+- **Debug mode**
+  - Inspect per-backend results with latency, scores, and payloads
+
+- **Compare mode**
+  - Quantify differences between backends:
+    - Jaccard similarity
+    - Rank correlation (Spearman ρ)
+    - Score correlation
+  - Diff-highlighted result lists
+
+- **Diagnose mode**
+  - Explain *why expected results were not retrieved*:
+    - not found
+    - found but not retrieved
+    - score gap from top results
+  - Provides actionable recommendations
+
+Helps answer: **“Why didn’t my query return what I expected?”**
+
+---
 
 ### Index Health
-- Per-backend health status (healthy / degraded / unhealthy) with a single click
-- Actionable findings: missing HNSW index, empty collection, reachability errors
-- Collapsible stats: vector count, dimension, distance metric, index type, disk usage
+
+Quickly identify misconfigurations and performance risks.
+
+- Health status: **healthy / degraded / unhealthy**
+- Detect issues such as:
+  - missing HNSW index
+  - empty collections
+  - connectivity errors
+- Detailed stats:
+  - vector count
+  - dimension
+  - distance metric
+  - index type
+  - disk usage
+
+Helps distinguish **index issues vs embedding issues**
+
+---
 
 ### Eval Runner
-- Run a retrieval eval from a CSV dataset over any configured backend
-- Live WebSocket streaming of nDCG@k, MRR@k, Recall@k, and p50/p95/p99 latency
-- Recharts line chart streaming metrics per query
-- Export final results as JSON
+
+Run reproducible retrieval benchmarks.
+
+- Execute evaluation from CSV datasets
+- Live streaming metrics via WebSocket:
+  - nDCG@k
+  - MRR@k
+  - Recall@k
+  - p50 / p95 / p99 latency
+- Real-time charts (Recharts)
+- Export results as JSON
+
+Compare **quality and performance across backends and configs**
+
+---
 
 ### Vector Explorer
-- UMAP or t-SNE projection of any subset of vectors from the index
-- **2D and 3D** output — switch between modes with the dimension toggle
-- Bloom/glow post-processing (via `@react-three/postprocessing`)
-- Points colored by any payload field with an auto-generated palette
-- **HDBSCAN clustering** — one click runs density clustering on the projected
-  coordinates; noise points rendered in muted gray; color-mode toggle between
-  field coloring and cluster coloring
-- Click to select a point and inspect full payload in a slide-in side panel
-- Hover shows a tooltip (id + payload fields) and K nearest-neighbour lines in
-  projected space
-- Auto-rotate when idle; orbit controls lock to pan/zoom only in 2D mode
-- HUD overlay: point count, algorithm, dimension mode, elapsed time
-- Incremental projection via "Add More IDs" (reuses fitted UMAP model)
+
+Understand the structure of your embedding space.
+
+- UMAP or t-SNE projection
+- **2D and 3D modes**
+- HDBSCAN clustering (auto-detect clusters + noise)
+- Color by payload field or cluster
+- Hover:
+  - payload preview
+  - nearest-neighbour connections
+- Click:
+  - full payload inspection in side panel
+- Incremental projection (“Add More IDs”)
+- HUD: point count, algorithm, dimension, timing
+
+Helps explain **why certain results are retrieved (or missed)**
+
+---
+
+## Typical Workflow
+
+1. Run a query in **Query Debugger**
+2. Notice unexpected or missing results
+3. Use **Diagnose mode** to identify the issue
+4. Inspect vector structure in **Vector Explorer**
+5. Check index configuration in **Index Health**
+6. Validate improvements using **Eval Runner**
+
+---
 
 ## Quick Start
 
@@ -47,12 +129,11 @@ vector database backends simultaneously.
 pip install -e ".[qdrant,pgvector,dev]"
 cp vara.yaml.example vara.yaml
 
-# Start a local Qdrant and/or pgvector instance
+# Start local services
 docker compose -f docker-compose.dev.yml up -d
 
-# Start the backend + Vite dev server together
+# Start backend + UI
 vara dev
-```
 
 Then open [http://localhost:5173](http://localhost:5173).
 
