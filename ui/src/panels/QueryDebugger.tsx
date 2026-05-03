@@ -5,6 +5,7 @@ import type {
   BackendComparison,
   DiagnosisResult,
   QueryResult,
+  HitAlignment,
 } from "../api/types";
 import { debugQuery, compareQuery, diagnoseQuery } from "../api/client";
 import { useVaraStore } from "../store";
@@ -120,6 +121,138 @@ function DebugResults({ result }: { result: DebugQueryResult }) {
   );
 }
 
+// ── Result diff table ─────────────────────────────────────────────────────────
+
+interface DiffRow {
+  id: string;
+  rankA: number | null;
+  rankB: number | null;
+  scoreA: number | null;
+  scoreB: number | null;
+  delta: number | null;      // rank_a - rank_b; negative = A ranks higher
+  scoreDiff: number | null;  // score_a - score_b
+  missingFrom: string[];
+}
+
+function buildDiffRows(
+  alignments: HitAlignment[],
+  backendA: string,
+  backendB: string,
+): DiffRow[] {
+  return alignments
+    .map((a) => {
+      const rankA  = a.ranks[backendA]  ?? null;
+      const rankB  = a.ranks[backendB]  ?? null;
+      const scoreA = a.scores[backendA] ?? null;
+      const scoreB = a.scores[backendB] ?? null;
+      return {
+        id: a.id,
+        rankA,
+        rankB,
+        scoreA,
+        scoreB,
+        delta:     rankA  !== null && rankB  !== null ? rankA  - rankB  : null,
+        scoreDiff: scoreA !== null && scoreB !== null ? scoreA - scoreB : null,
+        missingFrom: a.missing_from,
+      };
+    })
+    .sort((a, b) => {
+      const aMissing = a.missingFrom.length > 0;
+      const bMissing = b.missingFrom.length > 0;
+      if (aMissing !== bMissing) return aMissing ? 1 : -1;
+      return (a.rankA ?? a.rankB ?? Infinity) - (b.rankA ?? b.rankB ?? Infinity);
+    });
+}
+
+function DiffTable({
+  alignments,
+  backendA,
+  backendB,
+}: {
+  alignments: HitAlignment[];
+  backendA: string;
+  backendB: string;
+}) {
+  const rows = buildDiffRows(alignments, backendA, backendB);
+  if (rows.length === 0) return null;
+
+  return (
+    <Card>
+      <div className="flex items-center justify-between mb-3">
+        <h3 className="text-sm font-semibold text-tx-primary">Result Diff</h3>
+        <span className="text-xs text-tx-muted font-mono">
+          A = {backendA} · B = {backendB}
+        </span>
+      </div>
+      <div className="overflow-x-auto">
+        <table className="w-full text-xs font-mono border-collapse">
+          <thead>
+            <tr className="border-b border-bg-border">
+              <th className="text-left py-2 pr-4 text-tx-muted font-medium">ID</th>
+              <th className="text-right py-2 px-3 text-tx-muted font-medium">rank A</th>
+              <th className="text-right py-2 px-3 text-tx-muted font-medium">rank B</th>
+              <th className="text-right py-2 px-3 text-tx-muted font-medium">Δ rank</th>
+              <th className="text-right py-2 px-3 text-tx-muted font-medium">score A</th>
+              <th className="text-right py-2 px-3 text-tx-muted font-medium">score B</th>
+              <th className="text-right py-2 px-3 text-tx-muted font-medium">Δ score</th>
+              <th className="text-left py-2 pl-3 text-tx-muted font-medium">missing</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((row) => (
+              <tr
+                key={row.id}
+                className={`border-b border-bg-border last:border-0 hover:bg-bg-raised transition-colors ${
+                  row.missingFrom.length > 0 ? "opacity-50" : ""
+                }`}
+              >
+                <td className="py-2 pr-4 text-tx-code max-w-[180px] truncate">{row.id}</td>
+                <td className="py-2 px-3 text-right text-tx-secondary">{row.rankA ?? "—"}</td>
+                <td className="py-2 px-3 text-right text-tx-secondary">{row.rankB ?? "—"}</td>
+                <td className={`py-2 px-3 text-right font-semibold ${
+                  row.delta === null ? "text-tx-muted" :
+                  row.delta < 0      ? "text-sev-info" :
+                  row.delta > 0      ? "text-sev-warning" :
+                                       "text-tx-muted"
+                }`}>
+                  {row.delta === null
+                    ? "—"
+                    : row.delta > 0
+                      ? `+${row.delta}`
+                      : String(row.delta)}
+                </td>
+                <td className="py-2 px-3 text-right text-tx-secondary">{row.scoreA?.toFixed(4) ?? "—"}</td>
+                <td className="py-2 px-3 text-right text-tx-secondary">{row.scoreB?.toFixed(4) ?? "—"}</td>
+                <td className={`py-2 px-3 text-right font-semibold ${
+                  row.scoreDiff === null      ? "text-tx-muted" :
+                  row.scoreDiff >  0.0001     ? "text-sev-info" :
+                  row.scoreDiff < -0.0001     ? "text-sev-warning" :
+                                                "text-tx-muted"
+                }`}>
+                  {row.scoreDiff === null
+                    ? "—"
+                    : row.scoreDiff > 0
+                      ? `+${row.scoreDiff.toFixed(4)}`
+                      : row.scoreDiff.toFixed(4)}
+                </td>
+                <td className="py-2 pl-3">
+                  {row.missingFrom.length > 0
+                    ? <span className="text-sev-error">{row.missingFrom.join(", ")}</span>
+                    : <span className="text-tx-muted">—</span>}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <div className="mt-3 pt-3 border-t border-bg-border flex gap-5 text-xs text-tx-muted">
+        <span><span className="text-sev-info">Δ–</span> A ranks / scores higher</span>
+        <span><span className="text-sev-warning">Δ+</span> B ranks / scores higher</span>
+      </div>
+    </Card>
+  );
+}
+
 // ── Compare mode results ──────────────────────────────────────────────────────
 
 function CompareResults({ result }: { result: BackendComparison }) {
@@ -157,6 +290,13 @@ function CompareResults({ result }: { result: BackendComparison }) {
           ))}
         </div>
       </Card>
+
+      {/* Diff table */}
+      <DiffTable
+        alignments={debug.alignments}
+        backendA={result.backend_a}
+        backendB={result.backend_b}
+      />
 
       {/* Side-by-side hits */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">

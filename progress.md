@@ -1,13 +1,12 @@
 # Vara Progress Tracker
 
-Last updated: 2026-05-03 (Phase 6 complete + post-launch improvements)
+Last updated: 2026-05-03 (pre-v1 feature enhancements started)
 
 ## Current Status
 
 Vara's Python backend and React UI are both functionally complete. Phases 0–6
-are done. Post-launch improvements have been made to the VectorExplorer panel:
-2D/3D projection toggle, HDBSCAN clustering, and t-SNE perplexity auto-clamping.
-The remaining work is packaging (Phase 7).
+are done. Pre-v1 feature enhancements are now underway: result diff table (6.6)
+is complete. Next: query summary/verdict (6.7) and query → explorer jump (6.8).
 
 ## Done
 
@@ -155,6 +154,15 @@ Theme: dark + indigo-violet. Full design spec in `UI.md`.
 | 11 | VectorExplorer — 2D/3D projection toggle (`n_components` wired backend → frontend) | ✅ |
 | 12 | VectorExplorer — HDBSCAN clustering (`POST /api/projection/{job_id}/cluster`, color-mode toggle, noise points) | ✅ |
 | 13 | EvalRunner — multi-source dataset input: CSV, JSON/JSONL, Collection sample (`JSONLoader`, `sample_collection`) | ✅ |
+
+### Pre-v1 Feature Enhancements
+
+| Step | Task | Status |
+|------|------|--------|
+| 6.6 | Result diff table in compare mode — ID, rank A/B, Δ rank, score A/B, Δ score, missing flag | ✅ |
+| 6.7 | Query summary/verdict — dominant root-cause classification banner in diagnose mode | ⬜ |
+| 6.8 | Query → Explorer jump — "View in Explorer" button seeds VectorExplorer with query vector + result IDs | ⬜ |
+| 6.9 | Ground truth metric per query — Recall@k, MRR tiles in diagnose mode | ⬜ |
 
 ### Post-launch Fixes
 
