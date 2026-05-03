@@ -11,7 +11,9 @@
 | State | Zustand | ✅ installed |
 | Charts | Recharts | ✅ installed |
 | 3D | @react-three/fiber v8 + @react-three/drei v9 + Three.js | ✅ installed |
+| Post-processing | @react-three/postprocessing | ✅ installed |
 | Icons | lucide-react | ✅ installed |
+| Fonts | geist (npm, self-hosted variable woff2) | ✅ installed |
 | WebSocket | Native browser WebSocket | no dep needed |
 
 **No component library** — custom components only. Keeps the design coherent and bundle small.
@@ -22,50 +24,69 @@
 
 ### Colors
 
+Token names are unchanged so all components continue to work without edits. Only the hex values were updated to the ink scale.
+
 ```ts
-// tailwind.config.ts extensions
 colors: {
   bg: {
-    base:    '#0F1117',   // app background
-    surface: '#1A1D2E',   // cards, panels, sidebar
-    raised:  '#232640',   // inputs, hover states, tooltips
-    border:  '#2D3148',   // panel borders, dividers
+    base:    '#0B0D12',              // app background (near-black)
+    surface: '#11141B',              // cards, panels, sidebar
+    raised:  '#161A22',              // inputs, hover states
+    border:  '#1F2330',              // dividers, borders
   },
   accent: {
-    DEFAULT: '#7C6AF7',   // indigo-violet — primary CTA, active nav, focus rings
-    hover:   '#9585F8',
-    muted:   '#3D3572',   // subtle tint backgrounds
+    DEFAULT: '#8B7DFF',              // violet — primary CTA, active states
+    hover:   '#9D90FF',
+    muted:   'rgba(139,125,255,0.14)', // transparent tint for hover/focus
   },
-  text: {
-    primary:  '#E2E8F0',
-    secondary: '#94A3B8',
-    muted:    '#64748B',
-    code:     '#A5F3FC',  // cyan — IDs, raw vectors, SQL
+  cy: {
+    DEFAULT: '#5DE3FF',              // cyan — second accent, code text
+    soft:    'rgba(93,227,255,0.12)',
   },
-  severity: {
-    error:   '#F87171',   // red-400
-    warning: '#FBBF24',   // amber-400
-    healthy: '#34D399',   // emerald-400
-    info:    '#60A5FA',   // blue-400
+  tx: {
+    primary:   '#ECEDEF',            // warm off-white (not pure white)
+    secondary: '#A8AEBB',
+    muted:     '#6E7689',
+    code:      '#5DE3FF',            // cyan — IDs, vectors, SQL (= cy.DEFAULT)
+  },
+  sev: {
+    error:   '#F47272',
+    warning: '#F2B45A',
+    healthy: '#5BD6A8',
+    info:    '#7AB8FF',
   },
 }
 ```
+
+CSS custom properties (`:root`):
+```css
+--grad:     linear-gradient(135deg, #8B7DFF 0%, #5DE3FF 100%);
+--vio-soft: rgba(139, 125, 255, 0.14);
+--cy-soft:  rgba(93, 227, 255, 0.12);
+```
+
+Used directly in components where Tailwind utility classes can't express the value (gradient fills, conic rings, glow shadows).
 
 ### Typography
 
 ```ts
 fontFamily: {
-  sans: ['Inter', 'system-ui', 'sans-serif'],   // UI chrome
-  mono: ['JetBrains Mono', 'Fira Code', 'monospace'],  // vectors, IDs, SQL
+  sans:  ['Geist', 'Inter', 'system-ui', 'sans-serif'],
+  mono:  ['Geist Mono', 'JetBrains Mono', 'monospace'],
+  serif: ['Instrument Serif', 'Georgia', 'serif'],   // wordmark only
 }
 fontSize: {
-  xs:  '11px',
-  sm:  '13px',
-  base: '14px',
-  lg:  '16px',
-  xl:  '20px',
+  xs:   ['11px', { lineHeight: '16px', letterSpacing: '0.04em' }],
+  sm:   ['12px', { lineHeight: '18px' }],
+  base: ['13px', { lineHeight: '20px' }],
+  lg:   ['16px', { lineHeight: '24px' }],
+  xl:   ['22px', { lineHeight: '28px' }],
 }
 ```
+
+- Geist and Geist Mono are self-hosted variable woff2 files from the `geist` npm package, served from `public/fonts/`. No Google Fonts dependency for body text.
+- Instrument Serif loaded via Google Fonts (`@import` in `index.css`) — used only for the wordmark.
+- Body size tightened to 13px (was 14px) — denser feels more devtool-appropriate.
 
 ### Spacing & Shape
 
@@ -167,20 +188,23 @@ All functions use `fetch` with `Content-Type: application/json`. WS helpers wrap
 ```
 src/components/
   layout/
-    TopBar.tsx          — logo, backend/collection selectors, connection status dot
+    TopBar.tsx          — logo + connection status dot (backend/collection selection is panel-local)
     Sidebar.tsx         — nav links with icons, active highlight in accent color
   ui/
-    Card.tsx            — bg-surface border border-border rounded-lg p-4
-    Badge.tsx           — severity-colored pill (error/warning/healthy/info)
-    Button.tsx          — primary (accent bg) + ghost variant
-    Input.tsx           — dark bg-raised border, cyan focus ring
-    Spinner.tsx         — animated indigo ring
-    EmptyState.tsx      — icon + message for empty results
-    CodeBlock.tsx       — monospace, bg-raised, cyan text, copy button
-    ScoreBar.tsx        — horizontal bar 0–1, accent fill, used for hit scores
+    Card.tsx            — bg-surface border rounded-lg, inset top-edge highlight
+    Badge.tsx           — colored dot + mono text; variants: error/warning/info/healthy/degraded/unhealthy/vio/cy/default
+    Button.tsx          — primary (gradient + glow shadow + inset highlight + kbd hint slot) + ghost
+    Input.tsx           — kicker label (mono uppercase), vio focus ring; exports Input, Textarea, Select
+    Spinner.tsx         — animated accent ring
+    EmptyState.tsx      — icon tile with radial glow + readable sub-text
+    CodeBlock.tsx       — bg-base (deeper), cyan text, 11.5px mono, copy button
+    ScoreBar.tsx        — 4px bar, --grad fill, scaleX mount animation
+    SegmentedControl.tsx — tab/mode switcher; active segment has inset shadow
+    Kicker.tsx          — mono uppercase 11px tracking label for section headers
   data/
-    HitCard.tsx         — single QueryHit: id (mono), score bar, payload
-    FindingCard.tsx     — single HealthFinding: severity badge, code, message, recommendation
+    HitCard.tsx         — compact row: rank (color-coded) · id + payload preview · score + ScoreBar;
+                          2px left border for common (green) / unique (violet) highlight
+    FindingCard.tsx     — severity icon + badge + code + message + recommendation
 ```
 
 ---
@@ -189,44 +213,59 @@ src/components/
 
 ### 1. QueryDebugger (`/debug`)
 
-**Purpose:** Run a vector query against one or two backends, inspect hits side by side.
+**Purpose:** Run a vector query against 1–4 backends, inspect hits side by side, compare or diagnose retrieval.
 
 **Layout:**
 ```
-┌─ Query Input ──────────────────────────────────────────┐
-│  [Vector textarea]  [top_k]  [filters JSON]            │
-│  [backend checkboxes]        [Run Query button]         │
-└────────────────────────────────────────────────────────┘
-┌─ Mode tabs: [Debug] [Compare] [Diagnose] ──────────────┐
-│                                                         │
-│  Debug:   side-by-side hit lists per backend            │
-│  Compare: Jaccard / Spearman stats + diff highlight     │
-│  Diagnose: expected IDs input → per-doc finding cards   │
-└────────────────────────────────────────────────────────┘
+┌─ Input column (380px, sticky) ──┬─ Results column (flex-1, scrolls) ──┐
+│  [title]  [Debug|Compare|Diagnose]  │                                       │
+│                                  │  Debug:   stats strip + N-col hit grid   │
+│  VECTOR                          │  Compare: similarity tiles (pairwise) or │
+│  [textarea]                      │           stats strip (N-way) + diff     │
+│                                  │           table + N hit columns           │
+│  BACKENDS                        │  Diagnose: verdict banner + truth tiles  │
+│  [chip] [chip] [chip]            │           + per-doc cards                │
+│                                  │                                           │
+│  COLLECTION                      │                                           │
+│  [select]                        │                                           │
+│                                  │                                           │
+│  TOP-K          [slider]  [10]   │                                           │
+│                                  │                                           │
+│  FILTERS (JSON, optional)        │                                           │
+│  [textarea]                      │                                           │
+│                                  │                                           │
+│  [Run ↵]                         │                                           │
+│                                  │                                           │
+│  NATIVE QUERY (after first run)  │                                           │
+│  [CodeBlock]                     │                                           │
+└──────────────────────────────────┴───────────────────────────────────────────┘
 ```
 
 **State (local):**
 - `vectorText: string` — raw JSON text from textarea
-- `topK: number`
+- `topK: number` — driven by slider (1–100)
 - `filtersText: string` — raw JSON
 - `selectedBackends: string[]`
+- `collectionName: string` — panel-local (not from global store)
 - `mode: 'debug' | 'compare' | 'diagnose'`
 - `expectedIds: string` — comma-separated, diagnose mode only
-- `result: DebugQueryResponse | CompareQueryResponse | DiagnoseResponse | null`
+- `result: DebugQueryResult | BackendComparison | DiagnosisResult | null`
 - `loading: boolean`
 - `error: string | null`
 
 **Key UX details:**
-- Vector textarea accepts raw JSON array `[0.1, 0.2, ...]` — validated on submit
-- Backend checkboxes auto-populated from global store
-- Compare mode only enabled when exactly 2 backends selected
-- Common hits highlighted in green, unique hits highlighted per backend
-- Latency shown as `Xms` badge on each backend result header
-- `native_query.sql` shown in a collapsible CodeBlock
-- **Compare mode**: result diff table shows ID, rank A/B, Δ rank, score A/B, Δ score, missing flag for every hit across both backends
-- **Diagnose mode**: amber verdict banner classifies the dominant root cause (not in index / filter exclusion / embedding mismatch / low rank)
-- **"View in Explorer" button**: appears on debug results (all hit IDs) and diagnose results (retrieved + expected IDs); seeds `explorerSeedIds` in store and navigates to `/explore`
-- **Diagnose mode ground truth tiles**: three metric tiles (`Recall@k`, `MRR`, `Hits N/M`) appear between the Summary card and per-document list whenever `expected_ids` are provided; computed by the backend in `diagnose_retrieval()` and added to `DiagnosisResult`
+- Two-column sticky layout — input always visible while results scroll
+- Mode switcher is a `SegmentedControl`; compare enabled when ≥ 2 backends selected
+- Backend selectors are chip-buttons with active violet tint + inline type tag
+- Top-K uses a range slider with live mono value display
+- Field labels use `Kicker` component (mono uppercase)
+- Native query preview (`CodeBlock`) pinned to bottom of input column, appears after first run
+- **Debug mode**: stats strip (latency + hit count per backend); grid adapts 1→2→3→4 columns; `HitCard` rows with color-coded rank, payload preview, score + ScoreBar
+- **Compare mode (2 backends)**: calls `compareQuery`; Jaccard, rank ρ, score ρ, common-hits tiles; N-way diff table (best rank = green, worst = amber, spread column); side-by-side hit lists
+- **Compare mode (3–4 backends)**: calls `debugQuery`; stats strip instead of pairwise metrics; same N-way diff table generalised to N columns
+- **HitCard highlight**: 2px left border — `border-sev-healthy` for common hits, `border-accent` for unique-to-this-backend
+- **Diagnose mode**: amber gradient verdict banner with icon tile; three truth tiles (Recall@k / MRR / Hits) each with a conic-gradient donut ring; per-doc rank badges color-coded (green ≤3, amber ≤8, red otherwise)
+- **"View in Explorer" button**: appears on debug and diagnose results; seeds `explorerSeedIds` in store and navigates to `/explore`
 
 ---
 
@@ -369,19 +408,25 @@ src/components/
 | 15 | QueryDebugger — verdict banner (diagnose mode) | ✅ done |
 | 16 | QueryDebugger → VectorExplorer jump via Zustand seed + auto-project | ✅ done |
 | 17 | QueryDebugger — ground truth metric tiles (Recall@k, MRR, Hits) in diagnose mode | ✅ done |
+| 18 | UI redesign R0 — ink palette, Geist fonts, CSS vars, ::selection, focus ring | ✅ done |
+| 19 | UI redesign R1 — full component library upgrade (Button, Badge, ScoreBar, CodeBlock, Card, Input, EmptyState, Spinner, SegmentedControl, Kicker) | ✅ done |
+| 20 | UI redesign R2 — QueryDebugger two-column workbench, N-backend compare, HitCard row redesign | ✅ done |
+| 21 | UI redesign R3 — Index Health grid | ⬜ |
+| 22 | UI redesign R4 — Eval Runner live dashboard + sparkline | ⬜ |
+| 23 | UI redesign R5 — Vector Explorer glass overlays + Three.js dramatic mode | ⬜ |
+| 24 | UI redesign R6 — empty states + copy pass | ⬜ |
 
 ### Notes
 - Pinned `@react-three/drei@^9` (not v10) — fiber v8 requires React 18; drei v10 requires fiber v9 + React 19
-- Tailwind color keys: `bg-*`, `accent-*`, `tx-*`, `sev-*` (not `text-*`/`severity-*` to avoid conflicts)
-- Google Fonts loaded in `index.css`: Inter (400/500/600) + JetBrains Mono (400/500)
-- TopBar height bumped to `h-16` (64px), logo `text-2xl font-bold`, sidebar items `py-3 text-base`
-- Step 3 files: `Layout.tsx`, `TopBar.tsx`, `Sidebar.tsx`, updated `App.tsx`, `store/index.ts`
-- Step 4 files: `api/types.ts` (13 interface groups), `api/client.ts` (all REST + 2 WS helpers)
-- WS helpers return a teardown `() => void` — callers close on unmount or completion
-- Step 5 files: `components/ui/` — Card, Badge, Button, Input (+ Textarea + Select), Spinner, EmptyState, CodeBlock, ScoreBar; `components/data/` — HitCard (rank + score bar + collapsible payload, common/unique highlight), FindingCard (severity icon + badge + code + message + recommendation)
-- Steps 6–9: all panels complete and verified against live Qdrant + pgvector backends
+- Tailwind color keys: `bg-*`, `accent-*`, `tx-*`, `sev-*`, `cy-*` — token names unchanged from original; only values updated
+- Geist + Geist Mono: variable woff2 files copied from `geist` npm package to `public/fonts/`, loaded via `@font-face` in `index.css`; preloaded in `index.html`
+- Instrument Serif: loaded via Google Fonts for wordmark use only
+- TopBar: logo + connection status dot only; backend/collection selection is panel-local in each panel
+- Global store (`store/index.ts`): `backendName`/`collectionName`/`setBackendName`/`setCollectionName` removed; each panel manages its own selection with local `useState`
+- `SegmentedControl` is generic over `T extends string` — works for any set of string options
+- `Kicker` renders `font-mono text-xs uppercase tracking-[0.08em] text-tx-muted` — use for all section headers
+- Compare mode: 2 backends → `compareQuery` (Spearman ρ available); 3–4 backends → `debugQuery` (no Spearman, but N-way diff table still works via `HitAlignment.ranks: Record<string,number>`)
 - VectorExplorer geometry: fully imperative `primitive` approach with coordinate normalisation; declarative `bufferAttribute args` does not update in r3f v8
-- Step 10 planned: bloom post-processing (`@react-three/postprocessing`), payload-field color grouping, click-to-select side panel, K nearest-neighbour hover lines, auto-rotate, HUD overlay, color legend
 
 ---
 

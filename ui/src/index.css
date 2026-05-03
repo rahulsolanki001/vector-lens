@@ -29,6 +29,44 @@
   --cy-soft:  rgba(93, 227, 255, 0.12);
 }
 
+/* ── Range input ─────────────────────────────────────────────────────────── */
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+  cursor: pointer;
+}
+input[type="range"]::-webkit-slider-runnable-track {
+  height: 4px;
+  background: #1F2330;
+  border-radius: 2px;
+}
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 14px;
+  height: 14px;
+  background: #8B7DFF;
+  border-radius: 50%;
+  margin-top: -5px;
+  transition: box-shadow 150ms;
+}
+input[type="range"]:focus::-webkit-slider-thumb,
+input[type="range"]:hover::-webkit-slider-thumb {
+  box-shadow: 0 0 0 3px rgba(139, 125, 255, 0.25);
+}
+input[type="range"]::-moz-range-track {
+  height: 4px;
+  background: #1F2330;
+  border-radius: 2px;
+}
+input[type="range"]::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  background: #8B7DFF;
+  border: none;
+  border-radius: 50%;
+}
+
 /* ── Component classes ───────────────────────────────────────────────────── */
 @layer components {
   .btn-primary {

@@ -1,12 +1,14 @@
 # Vara Progress Tracker
 
-Last updated: 2026-05-03 (pre-v1 feature enhancements started)
+Last updated: 2026-05-04 (UI redesign in progress)
 
 ## Current Status
 
 Vara's Python backend and React UI are both functionally complete. Phases 0–6
-are done. All pre-v1 feature enhancements (6.6–6.9) are complete. The project
-is ready for Phase 7 packaging.
+are done. All pre-v1 feature enhancements (6.6–6.9) are complete. A
+comprehensive UI redesign is underway (Steps 0–3 complete); remaining steps are
+Index Health grid, Eval Runner live dashboard, Vector Explorer dramatic mode,
+and polish. Phase 7 packaging follows after the redesign.
 
 ## Done
 
@@ -170,6 +172,20 @@ Theme: dark + indigo-violet. Full design spec in `UI.md`.
 |-----|--------|
 | t-SNE perplexity auto-clamped to `max(1, min(perplexity, n_samples - 1))` — prevents crash on small point sets | ✅ |
 | `BEIRLoader` stub removed from `vara/eval/__init__.py` export — replaced by `JSONLoader` + `sample_collection` | ✅ |
+
+### UI Redesign
+
+Redesign plan in `UI.md` (Improvements section). Three.js kept for Vector Explorer. Navbar/topbar left as-is. Dramatic mode only for Explorer (no calm/dramatic toggle).
+
+| Step | Task | Status |
+|------|------|--------|
+| R0 | Design tokens — ink palette, Geist/Geist Mono fonts, CSS variables (`--grad`, `--vio-soft`, `--cy-soft`), `::selection`, focus ring | ✅ |
+| R1 | Component library — Button (gradient primary + glow), Badge (dot + vio/cy variants), ScoreBar (gradient fill + mount animation), CodeBlock (deeper bg + cyan text), Card (inset highlight), Input/Textarea/Select (kicker labels + vio focus ring), EmptyState (icon tile + radial glow), SegmentedControl (new), Kicker (new) | ✅ |
+| R2 | QueryDebugger — two-column sticky workbench; backend chip-checkboxes; top-k slider; native query preview in input column; N-backend debug grid; N-way diff table; compare mode supports 2–4 backends; pairwise Spearman kept for 2-backend case; redesigned HitCard rows with rank color + 2px left border highlight; verdict banner upgrade; conic-gradient truth tiles; color-coded per-doc rank badges | ✅ |
+| R3 | Index Health — status grid (auto-fill, min 360px), recommendation blocks | ⬜ |
+| R4 | Eval Runner — live telemetry dashboard, streaming sparkline | ⬜ |
+| R5 | Vector Explorer — glass overlays, dramatic mode (Three.js bloom) | ⬜ |
+| R6 | Empty states + copy pass | ⬜ |
 
 ### Phase 7 - Packaging
 
