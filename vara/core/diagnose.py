@@ -68,6 +68,7 @@ class DiagnosisResult(BaseModel):
     errors: list[str] = Field(default_factory=list)
     document_diagnoses: list[ExpectedDocumentDiagnosis] = Field(default_factory=list)
     summary: str
+    verdict: str | None = None
 
 
 async def diagnose_retrieval(
@@ -139,6 +140,7 @@ async def diagnose_retrieval(
         errors=query_errors,
         document_diagnoses=diagnoses,
         summary=_summarize(diagnoses, query_errors),
+        verdict=_classify_verdict(diagnoses, query_errors),
     )
 
 
@@ -309,6 +311,43 @@ def _score_gap(top_score: float | None, score: float) -> float | None:
     if top_score is None:
         return None
     return round(top_score - score, 6)
+
+
+def _classify_verdict(
+    diagnoses: list[ExpectedDocumentDiagnosis],
+    errors: list[str],
+) -> str | None:
+    if errors or not diagnoses:
+        return None
+    if all(d.retrieved for d in diagnoses):
+        return None
+
+    not_found = 0
+    filter_issue = 0
+    embedding_issue = 0
+    low_rank = 0
+
+    for d in diagnoses:
+        codes = {f.code for f in d.findings}
+        if not d.found:
+            not_found += 1
+        elif not d.retrieved and POSSIBLE_FILTER_EXCLUSION in codes:
+            filter_issue += 1
+        elif not d.retrieved:
+            embedding_issue += 1
+        elif d.retrieved and EXPECTED_DOCUMENT_LOW_RANK in codes:
+            low_rank += 1
+
+    tally: list[tuple[int, str]] = [
+        (not_found,       "Most likely: documents not in index — verify IDs, collection name, and whether data was inserted."),
+        (filter_issue,    "Most likely: active filter is excluding expected documents — inspect payload values and the native_query filter translation."),
+        (embedding_issue, "Most likely: embedding mismatch or index recall too low — check embedding model version, normalization, and consider increasing top_k."),
+        (low_rank,        "Most likely: weak semantic match — expected documents were retrieved but ranked low. Inspect chunk quality and embedding similarity."),
+    ]
+    tally.sort(key=lambda t: t[0], reverse=True)
+
+    count, verdict = tally[0]
+    return verdict if count > 0 else None
 
 
 def _summarize(diagnoses: list[ExpectedDocumentDiagnosis], errors: list[str]) -> str:

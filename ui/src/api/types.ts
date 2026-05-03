@@ -161,6 +161,7 @@ export interface DiagnosisResult {
   errors: string[];
   document_diagnoses: ExpectedDocumentDiagnosis[];
   summary: string;
+  verdict: string | null;
 }
 
 // ── Eval ──────────────────────────────────────────────────────────────────────

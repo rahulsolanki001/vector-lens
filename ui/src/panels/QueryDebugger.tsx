@@ -1,5 +1,5 @@
 import { useState, useCallback } from "react";
-import { Play, ChevronDown, ChevronRight } from "lucide-react";
+import { Play, ChevronDown, ChevronRight, AlertTriangle } from "lucide-react";
 import type {
   DebugQueryResult,
   BackendComparison,
@@ -333,6 +333,17 @@ function CompareResults({ result }: { result: BackendComparison }) {
 function DiagnoseResults({ result }: { result: DiagnosisResult }) {
   return (
     <div className="flex flex-col gap-4">
+      {/* Verdict banner */}
+      {result.verdict && (
+        <div className="flex gap-3 items-start px-4 py-3 rounded-lg border border-sev-warning/30 bg-sev-warning/5">
+          <AlertTriangle size={14} className="text-sev-warning shrink-0 mt-0.5" />
+          <div>
+            <span className="text-xs font-semibold text-sev-warning uppercase tracking-wide">Verdict</span>
+            <p className="text-sm text-tx-primary mt-0.5">{result.verdict}</p>
+          </div>
+        </div>
+      )}
+
       {/* Summary */}
       <Card>
         <div className="flex items-center justify-between mb-2">
