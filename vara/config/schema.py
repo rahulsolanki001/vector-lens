@@ -40,7 +40,7 @@ _VALID_LOG_LEVELS = {"debug", "info", "warning", "error"}
 _VALID_BACKEND_TYPES = {"qdrant", "pinecone", "pgvector", "milvus"}
 
 # Planned but not yet implemented — used to give helpful error messages
-_PLANNED_BACKEND_TYPES = {"pinecone", "pgvector", "milvus"}
+_PLANNED_BACKEND_TYPES: set[str] = set()
 
 _MAX_BACKENDS = 20
 
@@ -212,25 +212,21 @@ class VaraConfig(BaseModel):
         return backends
 
     @model_validator(mode="after")
-    def warn_if_no_qdrant_backends(self) -> VaraConfig:
+    def validate_no_empty_backends(self) -> VaraConfig:
         """
-        Post-validation check: if all backends are of planned-but-unimplemented
-        types, warn clearly so the user doesn't get a confusing runtime error.
-
-        This is a model_validator (not field_validator) because it needs to
-        inspect the full resolved backend list after individual fields are valid.
+        Post-validation check: all configured backend types are supported.
+        _PLANNED_BACKEND_TYPES is now empty — all four types are implemented.
         """
         if not self.backends:
             return self  # loader.py handles the empty-backends case at runtime
 
-        supported = [b for b in self.backends if b.type not in _PLANNED_BACKEND_TYPES]
-        if not supported:
-            planned_names = [f"'{b.name}' ({b.type})" for b in self.backends]
+        unsupported = [b for b in self.backends if b.type in _PLANNED_BACKEND_TYPES]
+        if unsupported and len(unsupported) == len(self.backends):
+            names = [f"'{b.name}' ({b.type})" for b in unsupported]
             raise ValueError(
                 f"None of your configured backends are supported in this version of Vara.\n"
-                f"Backends using planned (not yet implemented) types: {', '.join(planned_names)}.\n"
-                f"Currently supported: qdrant.\n"
-                f"Please add a Qdrant backend to use Vara."
+                f"Unsupported types: {', '.join(names)}.\n"
+                f"Supported types: qdrant, pinecone, pgvector, milvus."
             )
 
         return self

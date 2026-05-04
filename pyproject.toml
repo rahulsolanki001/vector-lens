@@ -43,7 +43,7 @@ qdrant = [
     "qdrant-client>=1.8.0",
 ]
 pinecone = [
-    "pinecone-client>=3.2.0",
+    "pinecone>=3.0.0",
 ]
 pgvector = [
     "asyncpg>=0.29.0",

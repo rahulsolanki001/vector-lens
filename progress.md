@@ -187,6 +187,13 @@ Redesign plan in `UI.md` (Improvements section). Three.js kept for Vector Explor
 | R5 | Vector Explorer — glass overlays, dramatic mode (Three.js bloom) | ✅ |
 | R6 | Empty states + copy pass | ✅ |
 
+### Adapter Completions (Pre-v1)
+
+| Adapter | Status |
+|---------|--------|
+| Milvus (`vara/adapters/milvus.py`) | ✅ Full implementation — pymilvus 2.4 MilvusClient, HNSW/IVF health checks, Vara filter → expr string, async via executor |
+| Pinecone (`vara/adapters/pinecone.py`) | ✅ Full implementation — pinecone SDK v3+, serverless/pod specs, Vara filter → metadata filter, fullness/readiness health checks |
+
 ### Phase 7 - Packaging
 
 - Build pipeline: `make build-ui` → copy dist → `make build` (wheel with bundled UI)
