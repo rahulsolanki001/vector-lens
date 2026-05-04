@@ -177,8 +177,8 @@ class PgvectorAdapter(VecDBAdapter):
     async def connect(self) -> None:
         self._pool = await asyncpg.create_pool(dsn=self._config.dsn)
 
-        # Detect distance metric once at startup so queries use the right operator
         async with self._pool.acquire() as conn:
+            # Detect distance metric once at startup so queries use the right operator
             rows = await conn.fetch(
                 """
                 SELECT indexdef FROM pg_indexes
@@ -189,6 +189,27 @@ class PgvectorAdapter(VecDBAdapter):
                 self._config.vector_column,
             )
             self._distance_metric = _detect_metric(rows)
+
+            # Validate that the configured text_column actually exists. Fail early
+            # with a clear message rather than an obscure UndefinedColumnError later.
+            txt_col_exists: bool = await conn.fetchval(
+                """
+                SELECT EXISTS (
+                    SELECT 1 FROM information_schema.columns
+                    WHERE table_schema = current_schema()
+                      AND table_name   = $1
+                      AND column_name  = $2
+                )
+                """,
+                self._config.table,
+                self._config.text_column,
+            )
+            if not txt_col_exists:
+                raise RuntimeError(
+                    f"pgvector adapter '{self.name}': text_column '{self._config.text_column}' "
+                    f"does not exist in table '{self._config.table}'. "
+                    f"Set the correct column name via text_column in vara.yaml."
+                )
 
     async def disconnect(self) -> None:
         if self._pool is not None:
@@ -368,7 +389,7 @@ class PgvectorAdapter(VecDBAdapter):
 
     # ── Vector fetch ──────────────────────────────────────────────────────────
 
-    async def get_vectors(self, collection: str, ids: list[str]) -> list[VectorRecord]:
+    async def get_vectors(self, _collection: str, ids: list[str]) -> list[VectorRecord]:
         table = self._config.table
         id_col = self._config.id_column
         vec_col = self._config.vector_column
