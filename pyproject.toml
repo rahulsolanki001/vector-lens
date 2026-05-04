@@ -36,6 +36,8 @@ dependencies = [
     "anyio>=4.3.0",
     "umap-learn>=0.5.12",
     "asyncpg>=0.31.0",
+    "pinecone>=9.0.0",
+    "pymilvus>=2.6.12",
 ]
 
 [project.optional-dependencies]

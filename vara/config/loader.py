@@ -21,17 +21,17 @@ from typing import Any
 
 import yaml
 
-from vara.adapters.base import AdapterConfig, PgvectorConfig, QdrantConfig
+from vara.adapters.base import AdapterConfig, PgvectorConfig, QdrantConfig,MilvusConfig,PineconeConfig
 from vara.config.schema import BackendConfig, VaraConfig
 
 # Matches ${VAR_NAME} anywhere inside a string value
 _ENV_VAR_RE = re.compile(r"\$\{([^}]+)\}")
 
 # Backend types fully implemented in this release
-_SUPPORTED_TYPES = {"qdrant", "pgvector"}
+_SUPPORTED_TYPES = {"qdrant", "pgvector","milvus","pinecone"}
 
 # Backend types recognised but not yet implemented
-_PLANNED_TYPES = {"pinecone", "milvus"}
+_PLANNED_TYPES = {}
 
 
 # ── Environment variable interpolation ───────────────────────────────────────
@@ -153,6 +153,13 @@ def resolve_adapter_config(backend: BackendConfig) -> AdapterConfig:
 
         case "pgvector":
             return PgvectorConfig(**data)
+        
+        case "milvus":
+            return MilvusConfig(**data)
+        
+        case "pinecone":
+            return PineconeConfig(**data)
+
 
         case t if t in _PLANNED_TYPES:
             raise ValueError(

@@ -9,22 +9,15 @@ Run queries, compare backends, diagnose failures, visualize embedding structure,
 
 ## Why Vara?
 
-Vector search failures are hard to debug. When a query gives poor results, the issue could be:
-
-- bad embeddings  
-- incorrect index configuration  
-- query parameters  
-- backend-specific behavior  
-
-Vara helps you identify the root cause.
+Vector search failures are hard to debug. When a query gives poor results, the issue could be bad embeddings, incorrect index configuration, wrong query parameters, or backend-specific behavior.
 
 With Vara, you can:
 
-- Compare retrieval results across multiple vector databases
-- Diagnose why expected results were not retrieved
-- Inspect index health and configuration issues
-- Visualize vector space structure (clusters, overlaps, outliers)
-- Run reproducible retrieval evaluations with real metrics
+- Compare retrieval results across multiple vector databases simultaneously
+- Diagnose why expected results were not retrieved, with a classified root-cause verdict
+- Inspect index health, configuration risks, and live stats for all backends at once
+- Visualize your embedding space in 2D/3D with UMAP or t-SNE and HDBSCAN clustering
+- Run reproducible retrieval evaluations with streaming metrics and real-time charts
 
 ---
 
@@ -34,66 +27,60 @@ With Vara, you can:
 
 Understand and compare retrieval behavior across backends.
 
-- **Debug mode**
-  - Inspect per-backend results with latency, scores, and payloads
-  - "View in Explorer" button — jump directly to Vector Explorer with all result IDs pre-loaded
+**Debug mode**
+- Inspect per-backend results with latency, scores, and payloads
+- Run against 1–4 backends simultaneously in an N-column grid
+- "View in Explorer" — jump directly to Vector Explorer with all result IDs pre-loaded
 
-- **Compare mode**
-  - Quantify differences between backends:
-    - Jaccard similarity
-    - Rank correlation (Spearman ρ)
-    - Score correlation
-  - Result diff table: ID, rank in A/B, Δ rank, score in A/B, Δ score, missing flag
+**Compare mode**
+- Side-by-side diff across 2–4 backends with:
+  - Jaccard similarity
+  - Rank correlation (Spearman ρ)
+  - Score correlation
+- Result diff table: ID, rank in A/B, Δ rank, score in A/B, Δ score, missing flag
 
-- **Diagnose mode**
-  - Explain *why expected results were not retrieved*:
-    - not found
-    - found but not retrieved
-    - score gap from top results
-  - **Verdict banner** — classifies the dominant root cause: not in index, filter exclusion, embedding mismatch, or weak semantic match
-  - "View in Explorer" button — jump to Vector Explorer with retrieved + expected IDs pre-loaded
-
-Helps answer: **"Why didn't my query return what I expected?"**
+**Diagnose mode**
+- Explain *why expected results were not retrieved*:
+  - not found in the index
+  - found but ranked too low to be retrieved
+  - score gap from the top results
+- **Verdict banner** — classifies the dominant root cause: not in index, filter exclusion, embedding mismatch, or weak semantic match
+- Per-query ground truth metrics (Recall@k, MRR) shown as tiles
+- "View in Explorer" — jump to Vector Explorer with retrieved + expected IDs pre-loaded
 
 ---
 
 ### Index Health
 
-Quickly identify misconfigurations and performance risks.
+Quickly identify misconfigurations and performance risks across all backends.
 
-- Health status: **healthy / degraded / unhealthy**
-- Detect issues such as:
-  - missing HNSW index
-  - empty collections
-  - connectivity errors
-- Detailed stats:
-  - vector count
-  - dimension
-  - distance metric
-  - index type
-  - disk usage
-
-Helps distinguish **index issues vs embedding issues**
+- Health status: **healthy / degraded / unhealthy** per backend
+- Runs checks in parallel — one card per backend in an auto-fill responsive grid
+- Adapter-specific checks:
+  - **Qdrant** — segment health, optimizer state, payload index coverage
+  - **pgvector** — extension present, HNSW/IVFFlat index, empty table
+  - **Milvus** — load state, index present, HNSW `efConstruction`/`M`, IVF `nlist` sanity
+  - **Pinecone** — index ready state, fullness (warn >75%, error >90%)
+- Live stats per collection: vector count, dimension, distance metric, disk/RAM usage
 
 ---
 
 ### Eval Runner
 
-Run reproducible retrieval benchmarks.
+Run reproducible retrieval benchmarks with a live telemetry dashboard.
 
-- Three dataset sources selectable from the UI:
-  - **CSV** — `id, text, vector, relevant_ids` columns (flexible field aliases)
-  - **JSON / JSONL** — array of objects or one object per line, same field aliases
-  - **Collection sample** — samples N random vectors from the live index and runs self-retrieval eval (no file needed)
-- Live streaming metrics via WebSocket:
-  - nDCG@k
-  - MRR@k
-  - Recall@k
-  - p50 / p95 / p99 latency
-- Real-time charts (Recharts)
-- Export results as JSON
+Three dataset sources:
 
-Compare **quality and performance across backends and configs**
+- **CSV** — `id, text, vector, relevant_ids` columns with flexible field aliases
+- **JSON / JSONL** — array of objects or one object per line
+- **Collection sample** — samples N random vectors from the live index for a self-retrieval sanity check (no file needed)
+
+Live streaming metrics (WebSocket):
+
+- nDCG@k, MRR@k, Recall@k (running means, updated per query)
+- p50 / p95 / p99 latency percentiles
+- Real-time sparkline chart (nDCG + MRR traces)
+- Proportional latency bars (p50 / p95 / p99)
 
 ---
 
@@ -101,20 +88,16 @@ Compare **quality and performance across backends and configs**
 
 Understand the structure of your embedding space.
 
-- UMAP or t-SNE projection
-- **2D and 3D modes**
-- HDBSCAN clustering (auto-detect clusters + noise)
-- Color by payload field or cluster
-- Hover:
-  - payload preview
-  - nearest-neighbour connections
-- Click:
-  - full payload inspection in side panel
-- Incremental projection ("Add More IDs")
-- HUD: point count, algorithm, dimension, timing
-- **Jump from Query Debugger** — "View in Explorer" button seeds IDs and auto-projects on arrival
-
-Helps explain **why certain results are retrieved (or missed)**
+- UMAP or t-SNE dimensionality reduction
+- **2D and 3D projection modes** — toggle without re-projecting
+- HDBSCAN clustering — auto-detect clusters and noise points
+- Color by payload field or cluster assignment
+- Hover: payload preview + nearest-neighbour connection lines
+- Click: full payload inspection in a slide-up drawer
+- Incremental projection ("Add More IDs") — extend an existing projection without re-running UMAP from scratch
+- HUD overlay: point count, algorithm, projection dimensions, timing
+- **Jump from Query Debugger** — "View in Explorer" seeds IDs and auto-projects on arrival
+- Three.js point cloud with bloom post-processing
 
 ---
 
@@ -122,8 +105,8 @@ Helps explain **why certain results are retrieved (or missed)**
 
 1. Run a query in **Query Debugger**
 2. Notice unexpected or missing results
-3. Use **Diagnose mode** — read the verdict banner for the likely root cause
-4. Click **"View in Explorer"** — jump directly to Vector Explorer with result IDs pre-loaded
+3. Switch to **Diagnose mode** — read the verdict banner for the likely root cause
+4. Click **"View in Explorer"** — jump to Vector Explorer with result IDs pre-loaded
 5. Check index configuration in **Index Health**
 6. Validate improvements using **Eval Runner**
 
@@ -132,53 +115,90 @@ Helps explain **why certain results are retrieved (or missed)**
 ## Quick Start
 
 ```bash
-pip install -e ".[qdrant,pgvector,dev]"
-cp vara.yaml.example vara.yaml
+# Install with the adapters you need
+pip install -e ".[qdrant,pgvector,milvus,pinecone,dev]"
 
-# Start local services
+cp vara.yaml.example vara.yaml
+# Edit vara.yaml to point at your backends
+
+# Start local services (Qdrant, pgvector, Milvus)
 docker compose -f docker-compose.dev.yml up -d
 
-# Start backend + UI
+# Start backend + UI with hot-reload
 vara dev
 ```
 
 Then open [http://localhost:5173](http://localhost:5173).
 
+For production use:
+
+```bash
+vara serve          # starts the API + serves the built React UI
+```
+
+---
+
 ## Configuration
 
 ```yaml
 # vara.yaml
+
 vara:
-  host: 0.0.0.0
   port: 7842
+  open_browser: true
+  log_level: info
 
 backends:
+
   - name: local-qdrant
     type: qdrant
-    url: http://localhost:6333
+    host: localhost
+    port: 6333
 
   - name: local-pgvector
     type: pgvector
     dsn: postgresql://vara:vara@localhost:5432/vara
+    table: embeddings
+    vector_column: embedding
+
+  - name: local-milvus
+    type: milvus
+    host: localhost
+    port: 19530
+    default_collection: my_collection
+
+  - name: my-pinecone
+    type: pinecone
+    api_key: ${PINECONE_API_KEY}
+    index: my-index
+    namespace: ""          # optional; leave empty for the default namespace
 ```
+
+Environment variables are interpolated using `${VAR}` syntax anywhere in `vara.yaml`.
+
+---
 
 ## CLI
 
 ```bash
-vara serve          # start the API server (opens browser)
-vara dev            # server + Vite hot-reload (development)
-vara check          # print a health table for all configured backends
-vara eval           # run a retrieval eval from a dataset and write JSON results
+vara serve          # start the API server (opens browser automatically)
+vara dev            # server + Vite hot-reload for UI development
+vara check          # print a live health table for all configured backends
+vara eval           # run a retrieval eval from a dataset file and write JSON results
 ```
 
-## Adapter Status
+---
 
-| Backend | Status |
-|---------|--------|
-| Qdrant | Complete — query, health, stats, filters, vector fetch |
-| pgvector | Complete — asyncpg, cosine/l2/ip auto-detect, HNSW/IVFFlat health checks |
-| Pinecone | Planned |
-| Milvus | Planned |
+## Adapters
+
+| Backend | Status | Notes |
+|---------|--------|-------|
+| Qdrant | Complete | query, health, stats, filters, vector fetch, grpc support |
+| pgvector | Complete | asyncpg, cosine/l2/ip auto-detect from `pg_indexes`, HNSW/IVFFlat health |
+| Milvus | Complete | pymilvus 2.4 MilvusClient, Zilliz Cloud, HNSW/IVF health, load-state checks |
+| Pinecone | Complete | SDK v3+, serverless and pod specs, fullness/readiness health checks |
+
+---
 
 ## Eval Dataset Formats
 
@@ -191,13 +211,27 @@ q001,example query,"[0.1, 0.2, ...]","doc-1,doc-2"
 **JSON** (array or JSONL)
 ```json
 [
-  {"id": "q001", "text": "example query", "vector": [0.1, 0.2], "relevant_ids": ["doc-1", "doc-2"]}
+  {
+    "id": "q001",
+    "text": "example query",
+    "vector": [0.1, 0.2],
+    "relevant_ids": ["doc-1", "doc-2"]
+  }
 ]
 ```
 
-Required fields: `id` (or `query_id`/`qid`), `text` (or `query`), `vector` (or `embedding`), `relevant_ids` (or `doc_ids`/`expected_ids`).
+Accepted field aliases:
 
-**Collection sample** — no file needed; select backend + collection in the UI, set `n_samples`, and the runner fetches live vectors for a self-retrieval sanity check.
+| Field | Aliases |
+|-------|---------|
+| `id` | `query_id`, `qid` |
+| `text` | `query` |
+| `vector` | `embedding` |
+| `relevant_ids` | `doc_ids`, `expected_ids` |
+
+**Collection sample** — no file needed. Select a backend and collection in the Eval Runner UI, set `n_samples`, and Vara fetches live vectors from your index for a self-retrieval sanity check.
+
+---
 
 ## Development
 
@@ -208,5 +242,4 @@ make check          # ruff + mypy
 make build-ui       # build the React UI into vara/server/static/
 ```
 
-The React UI lives in `ui/`. Built assets are copied into `vara/server/static/`
-and bundled into the Python wheel for single-binary distribution.
+The React UI lives in `ui/`. Built assets are copied into `vara/server/static/` and bundled into the Python wheel for single-command distribution (`vara serve`).
