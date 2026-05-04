@@ -184,7 +184,7 @@ Redesign plan in `UI.md` (Improvements section). Three.js kept for Vector Explor
 | R2 | QueryDebugger — two-column sticky workbench; backend chip-checkboxes; top-k slider; native query preview in input column; N-backend debug grid; N-way diff table; compare mode supports 2–4 backends; pairwise Spearman kept for 2-backend case; redesigned HitCard rows with rank color + 2px left border highlight; verdict banner upgrade; conic-gradient truth tiles; color-coded per-doc rank badges | ✅ |
 | R3 | Index Health — status grid (auto-fill, min 360px), recommendation blocks | ✅ |
 | R4 | Eval Runner — live telemetry dashboard, streaming sparkline | ✅ |
-| R5 | Vector Explorer — glass overlays, dramatic mode (Three.js bloom) | ⬜ |
+| R5 | Vector Explorer — glass overlays, dramatic mode (Three.js bloom) | ✅ |
 | R6 | Empty states + copy pass | ⬜ |
 
 ### Phase 7 - Packaging
