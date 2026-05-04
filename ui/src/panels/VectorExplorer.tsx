@@ -3,7 +3,7 @@ import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { OrbitControls } from "@react-three/drei";
 import { EffectComposer, Bloom } from "@react-three/postprocessing";
 import * as THREE from "three";
-import { Layers, Play, Plus, X, ChevronUp } from "lucide-react";
+import { Layers, Play, Plus, X, Boxes } from "lucide-react";
 import type { ProjectionPoint } from "../api/types";
 import { clusterProjection, connectProjectionWS } from "../api/client";
 import { useVaraStore } from "../store";
@@ -13,6 +13,7 @@ import { Input, Select } from "../components/ui/Input";
 import { Spinner } from "../components/ui/Spinner";
 import { Kicker } from "../components/ui/Kicker";
 import { SegmentedControl } from "../components/ui/SegmentedControl";
+import { EmptyState } from "../components/ui/EmptyState";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -519,9 +520,12 @@ export function VectorExplorer() {
             {status === "running" ? (
               <Spinner size="lg" />
             ) : (
-              <div className="text-center flex flex-col items-center gap-2 pointer-events-none">
-                <ChevronUp size={18} className="text-accent opacity-50" />
-                <p className="text-sm text-tx-muted">Enter point IDs and click Project</p>
+              <div className="pointer-events-none">
+                <EmptyState
+                  icon={<Boxes size={22} />}
+                  message="Nothing projected yet"
+                  sub="Enter point IDs in the panel on the left and click Project to visualise vectors."
+                />
               </div>
             )}
           </div>

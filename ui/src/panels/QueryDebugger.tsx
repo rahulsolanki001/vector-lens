@@ -783,8 +783,15 @@ export function QueryDebugger() {
 
         {!loading && !result && !error && (
           <EmptyState
-            message="Awaiting query"
-            sub="Configure your vector and backends, then run to inspect retrieval."
+            icon={<Telescope size={22} />}
+            message="Ready to inspect"
+            sub={
+              mode === "compare"
+                ? "Select 2–4 backends, paste a query vector, and run to compare retrieval side-by-side."
+                : mode === "diagnose"
+                ? "Paste a query vector and add ground-truth IDs, then run to see per-doc rank and recall."
+                : "Paste a query vector, pick your backends, and run to see ranked hits from each."
+            }
           />
         )}
 

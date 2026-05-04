@@ -1,5 +1,5 @@
 import { useState, useCallback } from "react";
-import { RefreshCw, CheckCircle2, AlertTriangle, XCircle, Info } from "lucide-react";
+import { RefreshCw, CheckCircle2, AlertTriangle, XCircle, Info, Server } from "lucide-react";
 import type { HealthFinding, HealthReport, HealthStatus } from "../api/types";
 import { getHealth } from "../api/client";
 import { useVaraStore } from "../store";
@@ -260,8 +260,9 @@ export function IndexHealth() {
   if (backends.length === 0) {
     return (
       <EmptyState
-        message="No backends loaded"
-        sub="Make sure the Vara server is running and /api/config is reachable."
+        icon={<Server size={22} />}
+        message="No backends connected"
+        sub="Start the Vara server and make sure /api/config is reachable."
       />
     );
   }

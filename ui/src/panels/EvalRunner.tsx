@@ -300,8 +300,9 @@ export function EvalRunner() {
   if (backends.length === 0) {
     return (
       <EmptyState
-        message="No backends configured"
-        sub="Make sure the Vara server is running and /api/config is reachable."
+        icon={<Activity size={22} />}
+        message="No backends connected"
+        sub="Start the Vara server and make sure /api/config is reachable."
       />
     );
   }
