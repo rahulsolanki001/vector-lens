@@ -21,17 +21,23 @@ from typing import Any
 
 import yaml
 
-from vara.adapters.base import AdapterConfig, PgvectorConfig, QdrantConfig,MilvusConfig,PineconeConfig
+from vara.adapters.base import (
+    AdapterConfig,
+    MilvusConfig,
+    PgvectorConfig,
+    PineconeConfig,
+    QdrantConfig,
+)
 from vara.config.schema import BackendConfig, VaraConfig
 
 # Matches ${VAR_NAME} anywhere inside a string value
 _ENV_VAR_RE = re.compile(r"\$\{([^}]+)\}")
 
 # Backend types fully implemented in this release
-_SUPPORTED_TYPES = {"qdrant", "pgvector","milvus","pinecone"}
+_SUPPORTED_TYPES = {"milvus", "pgvector", "pinecone", "qdrant"}
 
 # Backend types recognised but not yet implemented
-_PLANNED_TYPES = {}
+_PLANNED_TYPES = {"weaviate","chromadb"}
 
 
 # ── Environment variable interpolation ───────────────────────────────────────

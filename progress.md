@@ -194,6 +194,25 @@ Redesign plan in `UI.md` (Improvements section). Three.js kept for Vector Explor
 | Milvus (`vara/adapters/milvus.py`) | ✅ Full implementation — pymilvus 2.4 MilvusClient, HNSW/IVF health checks, Vara filter → expr string, async via executor |
 | Pinecone (`vara/adapters/pinecone.py`) | ✅ Full implementation — pinecone SDK v3+, serverless/pod specs, Vara filter → metadata filter, fullness/readiness health checks |
 
+### Pre-Packaging Verification
+
+Before Phase 7 packaging, run a stabilization pass to prove the repo matches the
+README/progress claims and that the built artifact will work from a clean install.
+
+| Step | Command / Check | Status |
+|------|-----------------|--------|
+| V1 | `make check` | ⬜ |
+| V2 | `make test-unit` | ⬜ |
+| V3 | `cd ui && npm run type-check` | ⬜ |
+| V4 | `cd ui && npm run build` | ⬜ |
+| V5 | `make build-ui` | ⬜ |
+| V6 | `make build` | ⬜ |
+| V7 | Install built wheel in a clean venv and run `vara --help` / `vara serve --help` | ⬜ |
+| V8 | Verify `vara serve` serves bundled React assets from `vara/server/static/` | ⬜ |
+| V9 | Run a Qdrant live smoke test after wheel install | ⬜ |
+| V10 | Decide whether to remove root-level `ci.yml` / `integration.yml` drafts | ⬜ |
+| V11 | Decide whether UI lint remains a placeholder or gets real ESLint wiring | ⬜ |
+
 ### Phase 7 - Packaging
 
 - Build pipeline: `make build-ui` → copy dist → `make build` (wheel with bundled UI)
