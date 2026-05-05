@@ -20,7 +20,7 @@ build-ui: ## Build the React UI and copy assets into vara/server/static/
 
 build: build-ui ## Full production build (UI + Python wheel)
 	@echo "Building Python wheel..."
-	$(PYTHON) -m build
+	$(PYTHON) -m build --no-isolation
 	@echo "Build complete. Artifacts in dist/"
 
 ##@ Installation

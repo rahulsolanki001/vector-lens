@@ -64,6 +64,8 @@ eval = [
     "scipy>=1.12.0",
 ]
 dev = [
+    "build>=1.2.0",
+    "hatchling>=1.27.0",
     "pytest>=8.1.0",
     "pytest-asyncio>=0.23.0",
     "pytest-docker>=3.1.0",
@@ -96,9 +98,11 @@ Issues = "https://github.com/yourusername/vara/issues"
 [tool.hatch.build.targets.wheel]
 packages = ["vara"]
 
-# Include the pre-built React UI in the wheel
-[tool.hatch.build.targets.wheel.force-include]
-"vara/server/static" = "vara/server/static"
+# Include the pre-built React UI in the source distribution and wheel.
+# `make build` runs `make build-ui` first, so ui/dist is present here.
+[tool.hatch.build.targets.sdist.force-include]
+"ui/dist" = "vara/server/static"
+
 
 # ── Ruff (lint + format) ─────────────────────────────────────────────────────
 [tool.ruff]

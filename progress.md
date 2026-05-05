@@ -201,12 +201,12 @@ README/progress claims and that the built artifact will work from a clean instal
 
 | Step | Command / Check | Status |
 |------|-----------------|--------|
-| V1 | `make check` | ⬜ |
-| V2 | `make test-unit` | ⬜ |
-| V3 | `cd ui && npm run type-check` | ⬜ |
-| V4 | `cd ui && npm run build` | ⬜ |
-| V5 | `make build-ui` | ⬜ |
-| V6 | `make build` | ⬜ |
+| V1 | `make check` | ✅ |
+| V2 | `make test-unit` | ✅ |
+| V3 | `cd ui && npm run type-check` | ✅ |
+| V4 | `cd ui && npm run build` | ✅ |
+| V5 | `make build-ui` | ✅ |
+| V6 | `make build` | ✅ |
 | V7 | Install built wheel in a clean venv and run `vara --help` / `vara serve --help` | ⬜ |
 | V8 | Verify `vara serve` serves bundled React assets from `vara/server/static/` | ⬜ |
 | V9 | Run a Qdrant live smoke test after wheel install | ⬜ |
