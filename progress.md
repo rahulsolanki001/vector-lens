@@ -207,11 +207,11 @@ README/progress claims and that the built artifact will work from a clean instal
 | V4 | `cd ui && npm run build` | ✅ |
 | V5 | `make build-ui` | ✅ |
 | V6 | `make build` | ✅ |
-| V7 | Install built wheel in a clean venv and run `vara --help` / `vara serve --help` | ⬜ |
-| V8 | Verify `vara serve` serves bundled React assets from `vara/server/static/` | ⬜ |
-| V9 | Run a Qdrant live smoke test after wheel install | ⬜ |
-| V10 | Decide whether to remove root-level `ci.yml` / `integration.yml` drafts | ⬜ |
-| V11 | Decide whether UI lint remains a placeholder or gets real ESLint wiring | ⬜ |
+| V7 | Install built wheel in a clean venv and run `vara --help` / `vara serve --help` | ✅ |
+| V8 | Verify `vara serve` serves bundled React assets from `vara/server/static/` | ✅ |
+| V9 | Run a Qdrant live smoke test after wheel install | ✅ all 4 backends returned live data |
+| V10 | Remove root-level `ci.yml` / `integration.yml` drafts | ✅ deleted |
+| V11 | Drop placeholder lint step from CI `ui` job — rely on type-check + build | ⬜ |
 
 ### Phase 7 - Packaging
 

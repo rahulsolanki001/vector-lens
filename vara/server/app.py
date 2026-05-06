@@ -10,6 +10,7 @@ Responsibilities:
 
 from __future__ import annotations
 
+import logging
 import os
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
@@ -28,6 +29,8 @@ from vara.server.routes import eval as eval_routes
 from vara.server.routes import projection as projection_routes
 from vara.server.websocket.eval_stream import stream_eval_job
 from vara.server.websocket.projection_stream import stream_projection_job
+
+logger = logging.getLogger(__name__)
 
 _STATIC_DIR = Path(__file__).parent / "static"
 
@@ -48,8 +51,15 @@ def _make_lifespan(config_path: str) -> Any:
         adapters = {}
         for adapter_cfg in adapter_configs:
             adapter = build_adapter(adapter_cfg)
-            await adapter.connect()
-            adapters[adapter.name] = adapter
+            try:
+                await adapter.connect()
+                adapters[adapter.name] = adapter
+            except Exception as exc:
+                logger.warning(
+                    "Backend '%s' failed to connect at startup and will be skipped: %s",
+                    adapter_cfg.name,
+                    exc,
+                )
 
         app.state.config = cfg
         app.state.adapters = adapters
