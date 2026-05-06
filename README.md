@@ -240,6 +240,20 @@ make install-dev    # install all extras + dev deps
 make test-unit      # run the unit test suite
 make check          # ruff + mypy
 make build-ui       # build the React UI into vara/server/static/
+make build          # build UI assets + Python wheel/sdist
 ```
 
 The React UI lives in `ui/`. Built assets are copied into `vara/server/static/` and bundled into the Python wheel for single-command distribution (`vara serve`).
+
+## Packaging
+
+```bash
+make clean
+make build
+python3 -m venv /tmp/vara-wheel-check
+/tmp/vara-wheel-check/bin/pip install dist/vara-*.whl
+/tmp/vara-wheel-check/bin/vara --help
+```
+
+Release builds should be created after the UI is built, because the wheel
+includes the compiled React assets from `vara/server/static/`.

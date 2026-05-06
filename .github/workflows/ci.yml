@@ -39,7 +39,7 @@ jobs:
         run: pytest -m unit -v --tb=short
 
   ui:
-    name: UI lint + tests
+    name: UI type-check + build + tests
     runs-on: ubuntu-latest
 
     steps:
@@ -58,8 +58,8 @@ jobs:
       - name: TypeScript check
         run: cd ui && npm run type-check
 
-      - name: ESLint
-        run: cd ui && npm run lint
+      - name: UI build
+        run: cd ui && npm run build
 
       - name: Vitest
         run: cd ui && npm run test

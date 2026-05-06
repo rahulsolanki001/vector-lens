@@ -1,14 +1,14 @@
 # Vara Progress Tracker
 
-Last updated: 2026-05-04 (UI redesign in progress)
+Last updated: 2026-05-07 (packaging verification in progress)
 
 ## Current Status
 
 Vara's Python backend and React UI are both functionally complete. Phases 0–6
-are done. All pre-v1 feature enhancements (6.6–6.9) are complete. A
-comprehensive UI redesign is underway (Steps 0–3 complete); remaining steps are
-Index Health grid, Eval Runner live dashboard, Vector Explorer dramatic mode,
-and polish. Phase 7 packaging follows after the redesign.
+are done. All pre-v1 feature enhancements (6.6–6.9), adapter completions,
+UI redesign steps, and pre-packaging verification checks are complete. Phase 7
+packaging is underway: local wheel/sdist builds and fresh-venv install checks
+are verified; release automation is next.
 
 ## Done
 
@@ -211,10 +211,16 @@ README/progress claims and that the built artifact will work from a clean instal
 | V8 | Verify `vara serve` serves bundled React assets from `vara/server/static/` | ✅ |
 | V9 | Run a Qdrant live smoke test after wheel install | ✅ all 4 backends returned live data |
 | V10 | Remove root-level `ci.yml` / `integration.yml` drafts | ✅ deleted |
-| V11 | Drop placeholder lint step from CI `ui` job — rely on type-check + build | ⬜ |
+| V11 | Drop placeholder lint step from CI `ui` job — rely on type-check + build | ✅ |
 
 ### Phase 7 - Packaging
 
-- Build pipeline: `make build-ui` → copy dist → `make build` (wheel with bundled UI)
-- PyPI publish GitHub Action on `v*` tags
-- Documentation
+| Step | Task | Status |
+|------|------|--------|
+| P1 | Confirm release metadata: repository URLs and non-empty MIT license | ✅ |
+| P2 | Document local packaging flow in README | ✅ |
+| P3 | Clean build pipeline: `make clean` → `make build` | ✅ |
+| P4 | Install built wheel in a fresh Python 3.11 venv and verify `vara --help` / `vara serve --help` | ✅ |
+| P5 | Verify bundled React assets are present inside the wheel | ✅ |
+| P6 | Add PyPI publish GitHub Action on `v*` tags | ✅ |
+| P7 | Add final release docs (`CHANGELOG.md`, release checklist) | ✅ |

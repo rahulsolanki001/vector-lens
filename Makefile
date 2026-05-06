@@ -1,4 +1,4 @@
-.PHONY: dev build build-ui install install-dev test test-unit test-integration lint fmt typecheck clean help
+.PHONY: dev build build-ui install install-dev test test-unit test-integration test-all lint fmt typecheck typecheck-ui build-ui-check check check-all clean help
 
 PYTHON := python3
 PIP    := pip
@@ -65,12 +65,15 @@ fmt: ## Auto-format with ruff
 typecheck: ## Run mypy type checker
 	mypy vara/
 
-lint-ui: ## Run ESLint on the React frontend
-	cd ui && npm run lint
+typecheck-ui: ## Run TypeScript type check on the React frontend
+	cd ui && npm run type-check
+
+build-ui-check: ## Build the React frontend without copying bundled assets
+	cd ui && npm run build
 
 check: lint typecheck ## Run all Python checks (lint + types)
 
-check-all: check lint-ui ## Run all checks (Python + UI)
+check-all: check typecheck-ui build-ui-check ## Run all checks (Python + UI type/build)
 
 ##@ Cleanup
 
