@@ -15,7 +15,7 @@ services:
   postgres:
     image: pgvector/pgvector:pg16
     environment:
-      POSTGRES_DB: vara
+      POSTGRES_DB: vlens
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
     ports:
@@ -24,7 +24,7 @@ services:
       - pgvector-data:/var/lib/postgresql/data
       - ./tests/fixtures/pg_init.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d vara"]
+      test: ["CMD-SHELL", "pg_isready -U postgres -d vlens"]
       interval: 5s
       timeout: 3s
       retries: 20

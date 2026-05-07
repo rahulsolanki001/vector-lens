@@ -2,7 +2,7 @@ import { useState, useRef, useCallback } from "react";
 import { Play, Square, Download, Activity } from "lucide-react";
 import type { EvalProgress } from "../api/types";
 import { startEval, connectEvalWS } from "../api/client";
-import { useVaraStore } from "../store";
+import { useVlensStore } from "../store";
 import { Badge } from "../components/ui/Badge";
 import { Button } from "../components/ui/Button";
 import { Input, Select } from "../components/ui/Input";
@@ -201,7 +201,7 @@ function exportJSON(data: EvalProgress[]) {
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
-  a.download = `vara_eval_${Date.now()}.json`;
+  a.download = `vlens_eval_${Date.now()}.json`;
   a.click();
   URL.revokeObjectURL(url);
 }
@@ -215,7 +215,7 @@ const SOURCE_OPTIONS: { value: Source; label: string }[] = [
 ];
 
 export function EvalRunner() {
-  const { backends, collections } = useVaraStore();
+  const { backends, collections } = useVlensStore();
 
   // Config
   const [source,         setSource]         = useState<Source>("csv");
@@ -302,7 +302,7 @@ export function EvalRunner() {
       <EmptyState
         icon={<Activity size={22} />}
         message="No backends connected"
-        sub="Start the Vara server and make sure /api/config is reachable."
+        sub="Start the Vector Lens server and make sure /api/config is reachable."
       />
     );
   }

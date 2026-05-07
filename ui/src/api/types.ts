@@ -1,4 +1,4 @@
-// TypeScript mirrors of vara backend Pydantic models.
+// TypeScript mirrors of Vector Lens backend Pydantic models.
 // Keep field names identical to the Python side — no camelCase conversion.
 
 // ── Config ────────────────────────────────────────────────────────────────────

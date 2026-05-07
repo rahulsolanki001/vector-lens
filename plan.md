@@ -1,6 +1,4 @@
-# Vara — Project Plan
-
-> *Vara* (वार) — Sanskrit for point / space.
+# Vector Lens — Project Plan
 
 ---
 
@@ -19,7 +17,7 @@ There is no tool that goes deep on the vector database layer itself — across m
 
 ### The Solution
 
-**Vara is a vector database debugger and visualizer** — a packaged deal of a Python SDK and a local debug UI that works across Qdrant, Pinecone, pgvector, and Milvus without changing your application code.
+**Vector Lens is a vector database debugger and visualizer** — a packaged deal of a Python SDK and a local debug UI that works across Qdrant, Pinecone, pgvector, and Milvus without changing your application code.
 
 Think of it as a browser devtools panel, but for your vector database. You install it once, point it at your database, and get:
 
@@ -32,11 +30,11 @@ Think of it as a browser devtools panel, but for your vector database. You insta
 
 **DB-agnostic by design.** Every feature works the same way regardless of which vector database you're running. The same `debug_query()` call, the same health report format, the same UI — whether you're on Qdrant locally or Pinecone in production.
 
-**Zero friction to install.** `pip install vara[qdrant]` and `vara serve`. No Docker required, no account, no API key for Vara itself. Opens in the browser automatically.
+**Zero friction to install.** `pip install vector-lens[qdrant]` and `vlens serve`. No Docker required, no account, no API key for Vector Lens itself. Opens in the browser automatically.
 
 **SDK + UI as one package.** The Python library and the React UI ship together. The built UI assets are bundled into the Python wheel — users never run `npm` commands.
 
-**Importable in your pipeline.** Vara is not just a CLI tool. You can call `debug_query()`, `health_check()`, and `diagnose_retrieval()` directly inside your RAG pipeline code for programmatic debugging and CI-integrated eval.
+**Importable in your pipeline.** Vector Lens is not just a CLI tool. You can call `debug_query()`, `health_check()`, and `diagnose_retrieval()` directly inside your RAG pipeline code for programmatic debugging and CI-integrated eval.
 
 **Async-first, production-safe.** All DB calls are `async`. The library adds zero synchronous blocking to your pipeline. The local server runs independently and never touches your application's event loop.
 
@@ -58,7 +56,7 @@ Think of it as a browser devtools panel, but for your vector database. You insta
 └────────────────────────┬────────────────────────────────┘
                          │ REST + WebSocket
 ┌────────────────────────▼────────────────────────────────┐
-│              FastAPI Server  (vara serve)                │
+│              FastAPI Server  (vlens serve)               │
 │   /api/query  /api/health  /api/eval  /ws/projection    │
 └────────────────────────┬────────────────────────────────┘
                          │ Python calls
@@ -90,9 +88,9 @@ Think of it as a browser devtools panel, but for your vector database. You insta
 *Goal: complete skeleton that compiles, imports cleanly, and has the full dev workflow in place before any logic is written.*
 
 - [ ] Repository structure — all directories and stub files
-- [ ] `pyproject.toml` — metadata, optional dependency groups (`vara[qdrant]`, `vara[all]`), CLI entry point, ruff + mypy config
+- [ ] `pyproject.toml` — metadata, optional dependency groups (`vector-lens[qdrant]`, `vector-lens[all]`), CLI entry point, ruff + mypy config
 - [ ] `.gitignore`, `README.md`, `LICENSE`
-- [ ] `vara.yaml.example` — documented config template
+- [ ] `vlens.yaml.example` — documented config template
 - [ ] `Makefile` — `make dev`, `make build`, `make test`, `make lint`, `make check`
 - [ ] `docker-compose.dev.yml` — Qdrant, pgvector, Milvus containers for local dev and integration tests
 - [ ] GitHub Actions — `ci.yml` (lint + unit tests on every push), `integration.yml` (full suite on main)
@@ -126,7 +124,7 @@ Full implementation using `AsyncQdrantClient`:
 - `health()` — 7 checks: reachability, collection status, ef_construct thresholds, m parameter, segment count, indexing lag %, payload index coverage
 
 #### Step 1.3 — Adapter registry (`adapters/__init__.py`) ✅
-`build_adapter(config)` factory with lazy imports — missing optional dependencies only raise at instantiation time, not at `import vara`.
+`build_adapter(config)` factory with lazy imports — missing optional dependencies only raise at instantiation time, not at `import vlens`.
 
 #### Step 1.4 — Pinecone adapter (`adapters/pinecone.py`) ⬜ *post-v1*
 *Detailed plan in "Post-v1: Adapter Expansion" section below.*
@@ -136,7 +134,7 @@ Full implementation using `AsyncQdrantClient`:
 #### Step 1.6 — Milvus adapter (`adapters/milvus.py`) ⬜ *post-v1*
 *Detailed plan in "Post-v1: Adapter Expansion" section below.*
 
-**Deliverable:** `from vara.adapters import build_adapter` + a `vara.yaml` pointing at a real Qdrant instance → working queries and health reports.
+**Deliverable:** `from vlens.adapters import build_adapter` + a `vlens.yaml` pointing at a real Qdrant instance → working queries and health reports.
 
 ---
 
@@ -171,7 +169,7 @@ INDEXING_LAG              = "indexing_lag"
 
 `health_check(collection, backend)`:
 - Calls `adapter.health(collection)` and enriches with cross-cutting logic
-- Formats `HealthReport` with Rich for CLI output (`vara check`)
+- Formats `HealthReport` with Rich for CLI output (`vlens check`)
 - Returns the same model for both CLI and server/UI use
 
 #### Step 2.4 — `core/diagnose.py` — `diagnose_retrieval()` ⬜
@@ -182,7 +180,7 @@ INDEXING_LAG              = "indexing_lag"
 - Runs heuristic diagnosis: embedding distance issue vs. filter exclusion vs. index parameter issue
 - Returns `DiagnosisResult` with per-doc findings and a plain-English summary
 
-**Deliverable:** All four public SDK functions work end-to-end against a real Qdrant instance. `vara check` prints a health report in the terminal.
+**Deliverable:** All four public SDK functions work end-to-end against a real Qdrant instance. `vlens check` prints a health report in the terminal.
 
 ---
 
@@ -210,9 +208,9 @@ Dataset loaders:
 `run_eval(dataset, collection, backend, metrics, dim_truncations, latency_percentiles)`:
 - Streams partial results via async generator (for WebSocket live updates)
 - Sweeps MRL dimension truncations (1024/512/256/128) in a single pass
-- Writes results to JSON (for `vara eval` CLI output)
+- Writes results to JSON (for `vlens eval` CLI output)
 
-**Deliverable:** `vara eval --dataset fiqa --backend local-qdrant --collection my_docs` produces a full evaluation report.
+**Deliverable:** `vlens eval --dataset fiqa --backend local-qdrant --collection my_docs` produces a full evaluation report.
 
 ---
 
@@ -240,9 +238,9 @@ Job state machine: `pending → running → complete | error`
 *Goal: the thin HTTP/WebSocket layer that connects the Python core to the React UI.*
 
 #### Step 5.1 — `server/app.py` — FastAPI factory ⬜
-- CORS middleware (always allows `localhost:7842` + `localhost:5173` + `vara.yaml cors_origins`)
+- CORS middleware (always allows `localhost:7842` + `localhost:5173` + `vlens.yaml cors_origins`)
 - Lifespan handler: connect all adapters on startup, disconnect on shutdown
-- Static file serving from `vara/server/static/` (the bundled React app)
+- Static file serving from `vlens/server/static/` (the bundled React app)
 - Adapter registry injected via FastAPI dependency
 
 #### Step 5.2 — Routes ⬜
@@ -260,18 +258,18 @@ GET  /api/config                          → current backend names + connection
 ```
 
 #### Step 5.3 — CLI implementation ⬜
-`vara serve`:
-- Loads `vara.yaml`, connects adapters, starts uvicorn
+`vlens serve`:
+- Loads `vlens.yaml`, connects adapters, starts uvicorn
 - Opens browser automatically (unless `--no-browser`)
 - Prints connection status table with Rich
 
-`vara check`:
+`vlens check`:
 - Loads config, runs `health_check()` on all backends, prints Rich report
 
-`vara dev`:
+`vlens dev`:
 - Starts Python server with `--reload` and Vite dev server in parallel via `subprocess`
 
-**Deliverable:** `vara serve` starts, browser opens at `localhost:7842`, collections load, health check API responds.
+**Deliverable:** `vlens serve` starts, browser opens at `localhost:7842`, collections load, health check API responds.
 
 ---
 
@@ -333,7 +331,7 @@ Fills the gap in compare mode: aggregate statistics already exist (Jaccard, Spea
 #### Step 6.7 — Query summary/verdict [P1] ⬜
 The existing `DiagnosisResult.summary` just counts ("2/3 retrieved; 1 not found"). A verdict classifies the likely root cause.
 
-**Backend change** (`vara/core/diagnose.py`): extend `_summarize()` to aggregate `findings[].code` across all diagnosed documents and produce a dominant-pattern verdict:
+**Backend change** (`vlens/core/diagnose.py`): extend `_summarize()` to aggregate `findings[].code` across all diagnosed documents and produce a dominant-pattern verdict:
 - If majority have `POSSIBLE_INDEX_RECALL_ISSUE` → "Most likely: HNSW index recall too low"
 - If majority have `POSSIBLE_EMBEDDING_MISMATCH` → "Most likely: embedding mismatch"
 - If majority are `EXPECTED_DOCUMENT_NOT_FOUND` → "Most likely: documents missing from index or ID format mismatch"
@@ -356,7 +354,7 @@ Ties the typical workflow together: debug → diagnose → visualise. Without th
 #### Step 6.9 — Ground truth metric per query [P2] ⬜
 The Eval Runner computes nDCG/MRR/Recall across many queries in bulk. The QueryDebugger in diagnose mode shows per-doc rank and found/retrieved status, but no single-query aggregate metrics.
 
-**Backend change** (`vara/core/diagnose.py` or route): when `expected_ids` are provided, compute and return:
+**Backend change** (`vlens/core/diagnose.py` or route): when `expected_ids` are provided, compute and return:
 - `recall_at_k`: how many expected IDs appeared in top-k
 - `mrr`: reciprocal rank of the first hit
 - `hit_count` / `total_expected`
@@ -370,7 +368,7 @@ The Eval Runner computes nDCG/MRR/Recall across many queries in bulk. The QueryD
 
 #### Step 1.4 — Pinecone adapter (`adapters/pinecone.py`) ⬜ *post-v1*
 - Pinecone REST SDK (`pinecone-client`), serverless and pod index support
-- Namespace handling (maps to Vara's collection concept)
+- Namespace handling (maps to Vector Lens's collection concept)
 - Metadata filter translation (`$eq`, `$in`, `$gt`, `$gte`, `$lt`, `$lte`)
 - `get_vectors()` via fetch-by-ID endpoint
 - Health: index readiness, vector count vs. capacity, replicas
@@ -384,10 +382,10 @@ The Eval Runner computes nDCG/MRR/Recall across many queries in bulk. The QueryD
 ---
 
 ### Phase 7 — Packaging & Distribution
-*Goal: `pip install vara[qdrant]` gives a complete, working tool with no extra steps.*
+*Goal: `pip install vector-lens[qdrant]` gives a complete, working tool with no extra steps.*
 
 #### Step 7.1 — Build pipeline ⬜
-- `make build-ui` → `npm run build` → copy `ui/dist/` → `vara/server/static/`
+- `make build-ui` → `npm run build` → copy `ui/dist/` → `vlens/server/static/`
 - `make build` → build Python wheel with static assets bundled
 - Automated in CI: build step runs before PyPI publish
 
@@ -398,7 +396,7 @@ The Eval Runner computes nDCG/MRR/Recall across many queries in bulk. The QueryD
 #### Step 7.3 — Documentation ⬜
 - `docs/` — MkDocs or plain Markdown
 - Getting started guide
-- vara.yaml reference
+- vlens.yaml reference
 - SDK API reference (auto-generated from docstrings)
 - "How to debug a bad retrieval" tutorial
 

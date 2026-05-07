@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import pytest
 
-from vara.eval.loaders import CSVLoader
+from vlens.eval.loaders import CSVLoader
 
 
 @pytest.mark.unit

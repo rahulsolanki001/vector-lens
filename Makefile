@@ -2,20 +2,20 @@
 
 PYTHON := python3
 PIP    := pip
-VARA   := vara
+VLENS  := vlens
 
 ##@ Development
 
 dev: ## Start Python server (--reload) + Vite dev server in parallel
-	@echo "Starting Vara dev servers..."
-	@$(PYTHON) -m vara.cli dev
+	@echo "Starting Vector Lens dev servers..."
+	@$(PYTHON) -m vlens.cli dev
 
-build-ui: ## Build the React UI and copy assets into vara/server/static/
+build-ui: ## Build the React UI and copy assets into vlens/server/static/
 	@echo "Building React UI..."
 	cd ui && npm run build
-	@echo "Copying dist to vara/server/static/..."
-	rm -rf vara/server/static/*
-	cp -r ui/dist/* vara/server/static/
+	@echo "Copying dist to vlens/server/static/..."
+	rm -rf vlens/server/static/*
+	cp -r ui/dist/* vlens/server/static/
 	@echo "UI build complete."
 
 build: build-ui ## Full production build (UI + Python wheel)
@@ -25,10 +25,10 @@ build: build-ui ## Full production build (UI + Python wheel)
 
 ##@ Installation
 
-install: ## Install vara with all adapters (editable)
+install: ## Install vector-lens with all adapters (editable)
 	$(PIP) install -e ".[all]"
 
-install-dev: ## Install vara with dev dependencies (editable)
+install-dev: ## Install vector-lens with dev dependencies (editable)
 	$(PIP) install -e ".[all,dev]"
 	cd ui && npm install
 
@@ -56,14 +56,14 @@ test-all: ## Run every test (unit + integration)
 ##@ Code quality
 
 lint: ## Run ruff linter
-	ruff check vara/ tests/
+	ruff check vlens/ tests/
 
 fmt: ## Auto-format with ruff
-	ruff format vara/ tests/
-	ruff check --fix vara/ tests/
+	ruff format vlens/ tests/
+	ruff check --fix vlens/ tests/
 
 typecheck: ## Run mypy type checker
-	mypy vara/
+	mypy vlens/
 
 typecheck-ui: ## Run TypeScript type check on the React frontend
 	cd ui && npm run type-check
@@ -80,8 +80,8 @@ check-all: check typecheck-ui build-ui-check ## Run all checks (Python + UI type
 clean: ## Remove build artifacts, caches
 	rm -rf dist/ build/ *.egg-info/
 	rm -rf .pytest_cache/ .mypy_cache/ .ruff_cache/
-	rm -rf vara/server/static/*
-	touch vara/server/static/.gitkeep
+	rm -rf vlens/server/static/*
+	touch vlens/server/static/.gitkeep
 	find . -type d -name __pycache__ -exec rm -rf {} +
 	find . -name "*.pyc" -delete
 

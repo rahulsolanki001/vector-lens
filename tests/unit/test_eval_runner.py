@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import pytest
 
-from vara.adapters.base import (
+from vlens.adapters.base import (
     CollectionInfo,
     CollectionStats,
     HealthReport,
@@ -16,8 +16,8 @@ from vara.adapters.base import (
     VecDBAdapter,
     VectorRecord,
 )
-from vara.eval.loaders import EvalDataset, EvalQuery
-from vara.eval.runner import EvalProgress, run_eval
+from vlens.eval.loaders import EvalDataset, EvalQuery
+from vlens.eval.runner import EvalProgress, run_eval
 
 # ── Fake adapter ──────────────────────────────────────────────────────────────
 

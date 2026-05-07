@@ -27,13 +27,13 @@ jobs:
         run: pip install -e ".[all,dev]"
 
       - name: Ruff lint
-        run: ruff check vara/ tests/
+        run: ruff check vlens/ tests/
 
       - name: Ruff format check
-        run: ruff format --check vara/ tests/
+        run: ruff format --check vlens/ tests/
 
       - name: Mypy
-        run: mypy vara/
+        run: mypy vlens/
 
       - name: Unit tests
         run: pytest -m unit -v --tb=short

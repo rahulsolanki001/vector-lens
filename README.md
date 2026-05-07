@@ -1,17 +1,17 @@
-# Vara
+# Vector Lens
 
-**Vara is a debugging and observability tool for vector search systems.**
+**Vector Lens is a debugging and observability tool for vector search systems.**
 
 It helps you understand *why your RAG retrieval works—or fails* across different vector databases, index configurations, and query setups.  
 Run queries, compare backends, diagnose failures, visualize embedding structure, and evaluate retrieval quality—all in one place.
 
 ---
 
-## Why Vara?
+## Why Vector Lens?
 
 Vector search failures are hard to debug. When a query gives poor results, the issue could be bad embeddings, incorrect index configuration, wrong query parameters, or backend-specific behavior.
 
-With Vara, you can:
+With Vector Lens, you can:
 
 - Compare retrieval results across multiple vector databases simultaneously
 - Diagnose why expected results were not retrieved, with a classified root-cause verdict
@@ -118,14 +118,14 @@ Understand the structure of your embedding space.
 # Install with the adapters you need
 pip install -e ".[qdrant,pgvector,milvus,pinecone,dev]"
 
-cp vara.yaml.example vara.yaml
-# Edit vara.yaml to point at your backends
+cp vlens.yaml.example vlens.yaml
+# Edit vlens.yaml to point at your backends
 
 # Start local services (Qdrant, pgvector, Milvus)
 docker compose -f docker-compose.dev.yml up -d
 
 # Start backend + UI with hot-reload
-vara dev
+vlens dev
 ```
 
 Then open [http://localhost:5173](http://localhost:5173).
@@ -133,7 +133,7 @@ Then open [http://localhost:5173](http://localhost:5173).
 For production use:
 
 ```bash
-vara serve          # starts the API + serves the built React UI
+vlens serve          # starts the API + serves the built React UI
 ```
 
 ---
@@ -141,9 +141,9 @@ vara serve          # starts the API + serves the built React UI
 ## Configuration
 
 ```yaml
-# vara.yaml
+# vlens.yaml
 
-vara:
+vlens:
   port: 7842
   open_browser: true
   log_level: info
@@ -157,7 +157,7 @@ backends:
 
   - name: local-pgvector
     type: pgvector
-    dsn: postgresql://vara:vara@localhost:5432/vara
+    dsn: postgresql://postgres:postgres@localhost:5432/vlens
     table: embeddings
     vector_column: embedding
 
@@ -174,17 +174,17 @@ backends:
     namespace: ""          # optional; leave empty for the default namespace
 ```
 
-Environment variables are interpolated using `${VAR}` syntax anywhere in `vara.yaml`.
+Environment variables are interpolated using `${VAR}` syntax anywhere in `vlens.yaml`.
 
 ---
 
 ## CLI
 
 ```bash
-vara serve          # start the API server (opens browser automatically)
-vara dev            # server + Vite hot-reload for UI development
-vara check          # print a live health table for all configured backends
-vara eval           # run a retrieval eval from a dataset file and write JSON results
+vlens serve          # start the API server (opens browser automatically)
+vlens dev           # server + Vite hot-reload for UI development
+vlens check          # print a live health table for all configured backends
+vlens eval           # run a retrieval eval from a dataset file and write JSON results
 ```
 
 ---
@@ -229,7 +229,7 @@ Accepted field aliases:
 | `vector` | `embedding` |
 | `relevant_ids` | `doc_ids`, `expected_ids` |
 
-**Collection sample** — no file needed. Select a backend and collection in the Eval Runner UI, set `n_samples`, and Vara fetches live vectors from your index for a self-retrieval sanity check.
+**Collection sample** — no file needed. Select a backend and collection in the Eval Runner UI, set `n_samples`, and Vector Lens fetches live vectors from your index for a self-retrieval sanity check.
 
 ---
 
@@ -239,21 +239,21 @@ Accepted field aliases:
 make install-dev    # install all extras + dev deps
 make test-unit      # run the unit test suite
 make check          # ruff + mypy
-make build-ui       # build the React UI into vara/server/static/
+make build-ui       # build the React UI into vlens/server/static/
 make build          # build UI assets + Python wheel/sdist
 ```
 
-The React UI lives in `ui/`. Built assets are copied into `vara/server/static/` and bundled into the Python wheel for single-command distribution (`vara serve`).
+The React UI lives in `ui/`. Built assets are copied into `vlens/server/static/` and bundled into the Python wheel for single-command distribution (`vlens serve`).
 
 ## Packaging
 
 ```bash
 make clean
 make build
-python3 -m venv /tmp/vara-wheel-check
-/tmp/vara-wheel-check/bin/pip install dist/vara-*.whl
-/tmp/vara-wheel-check/bin/vara --help
+python3 -m venv /tmp/vlens-wheel-check
+/tmp/vlens-wheel-check/bin/pip install dist/vector_lens-*.whl
+/tmp/vlens-wheel-check/bin/vlens --help
 ```
 
 Release builds should be created after the UI is built, because the wheel
-includes the compiled React assets from `vara/server/static/`.
+includes the compiled React assets from `vlens/server/static/`.

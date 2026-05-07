@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import type { BackendStatus, CollectionInfo } from "../api/types";
 
-type VaraState = {
+type VlensState = {
   backends: BackendStatus[];
   collections: CollectionInfo[];
   setBackends: (backends: BackendStatus[]) => void;
@@ -14,7 +14,7 @@ type VaraState = {
   clearExplorerSeed: () => void;
 };
 
-export const useVaraStore = create<VaraState>((set) => ({
+export const useVlensStore = create<VlensState>((set) => ({
   backends: [],
   collections: [],
   setBackends: (backends) => set({ backends }),

@@ -1,0 +1,58 @@
+# Vector Lens configuration — copy to vlens.yaml and edit for your setup.
+#
+# Environment variables are interpolated anywhere with ${VAR} syntax.
+# All fields except api_key / dsn have sensible defaults and can be omitted.
+
+vlens:
+  port: 7842
+  open_browser: true
+  log_level: info
+  cors_origins: []       # extra origins for remote UI access (http://host:port)
+
+backends:
+
+  # ── Qdrant ────────────────────────────────────────────────────────────────
+  - name: local-qdrant
+    type: qdrant
+    host: localhost
+    port: 6333
+    grpc_port: 6334
+    prefer_grpc: false
+    default_collection: documents
+
+  # Qdrant Cloud
+  # - name: qdrant-cloud
+  #   type: qdrant
+  #   host: https://your-cluster.cloud.qdrant.io
+  #   port: 6333
+  #   api_key: ${QDRANT_API_KEY}
+  #   prefer_grpc: false
+
+  # ── pgvector ──────────────────────────────────────────────────────────────
+  # - name: local-pgvector
+  #   type: pgvector
+  #   dsn: postgresql://postgres:postgres@localhost:5432/vlens
+  #   table: documents
+  #   vector_column: embedding
+  #   id_column: id
+  #   text_column: text
+
+  # ── Milvus ────────────────────────────────────────────────────────────────
+  # - name: local-milvus
+  #   type: milvus
+  #   host: localhost
+  #   port: 19530
+  #   default_collection: documents
+
+  # Zilliz Cloud
+  # - name: zilliz-cloud
+  #   type: milvus
+  #   host: https://your-cluster.zillizcloud.com
+  #   token: ${ZILLIZ_TOKEN}
+
+  # ── Pinecone ──────────────────────────────────────────────────────────────
+  # - name: my-pinecone
+  #   type: pinecone
+  #   api_key: ${PINECONE_API_KEY}
+  #   index: documents
+  #   namespace: ""        # leave empty for the default namespace

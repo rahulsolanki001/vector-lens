@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import pytest
 
-from vara.eval.cache import EmbeddingCache
+from vlens.eval.cache import EmbeddingCache
 
 
 @pytest.mark.unit

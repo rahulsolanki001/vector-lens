@@ -2,7 +2,7 @@ import { useState, useCallback } from "react";
 import { RefreshCw, CheckCircle2, AlertTriangle, XCircle, Info, Server } from "lucide-react";
 import type { HealthFinding, HealthReport, HealthStatus } from "../api/types";
 import { getHealth } from "../api/client";
-import { useVaraStore } from "../store";
+import { useVlensStore } from "../store";
 import { Badge } from "../components/ui/Badge";
 import { Button } from "../components/ui/Button";
 import { Spinner } from "../components/ui/Spinner";
@@ -215,7 +215,7 @@ function SummaryChips({ reports }: { reports: Record<string, HealthReport> }) {
 // ── Panel ─────────────────────────────────────────────────────────────────────
 
 export function IndexHealth() {
-  const { backends, collections } = useVaraStore();
+  const { backends, collections } = useVlensStore();
 
   const [reports, setReports] = useState<Record<string, HealthReport>>({});
   const [loading, setLoading] = useState<Record<string, boolean>>({});
@@ -262,7 +262,7 @@ export function IndexHealth() {
       <EmptyState
         icon={<Server size={22} />}
         message="No backends connected"
-        sub="Start the Vara server and make sure /api/config is reachable."
+        sub="Start the Vector Lens server and make sure /api/config is reachable."
       />
     );
   }

@@ -10,7 +10,7 @@ import type {
   ExpectedDocumentDiagnosis,
 } from "../api/types";
 import { debugQuery, compareQuery, diagnoseQuery } from "../api/client";
-import { useVaraStore } from "../store";
+import { useVlensStore } from "../store";
 import { Card } from "../components/ui/Card";
 import { Badge } from "../components/ui/Badge";
 import { Button } from "../components/ui/Button";
@@ -509,7 +509,7 @@ const MODE_OPTIONS: { value: Mode; label: string }[] = [
 ];
 
 export function QueryDebugger() {
-  const { backends, collections, setExplorerSeed } = useVaraStore();
+  const { backends, collections, setExplorerSeed } = useVlensStore();
   const navigate = useNavigate();
 
   const handleViewInExplorer = useCallback(

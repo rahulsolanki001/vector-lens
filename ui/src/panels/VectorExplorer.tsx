@@ -6,7 +6,7 @@ import * as THREE from "three";
 import { Layers, Play, Plus, X, Boxes } from "lucide-react";
 import type { ProjectionPoint } from "../api/types";
 import { clusterProjection, connectProjectionWS } from "../api/client";
-import { useVaraStore } from "../store";
+import { useVlensStore } from "../store";
 import { Badge } from "../components/ui/Badge";
 import { Button } from "../components/ui/Button";
 import { Input, Select } from "../components/ui/Input";
@@ -320,7 +320,7 @@ const COLOR_OPTIONS: { value: "field" | "cluster"; label: string }[] = [
 ];
 
 export function VectorExplorer() {
-  const { backends, collections, explorerSeedIds, explorerSeedBackend, clearExplorerSeed } = useVaraStore();
+  const { backends, collections, explorerSeedIds, explorerSeedBackend, clearExplorerSeed } = useVlensStore();
   const hadSeed = useRef(explorerSeedIds.length > 0);
 
   const initBackend = explorerSeedIds.length > 0 && explorerSeedBackend

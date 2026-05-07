@@ -1,14 +1,14 @@
-import { useVaraStore } from "../../store";
+import { useVlensStore } from "../../store";
 
 export function TopBar() {
-  const { backends } = useVaraStore();
+  const { backends } = useVlensStore();
   const isConnected = backends.length > 0;
 
   return (
     <header className="fixed top-0 left-0 right-0 z-40 h-16 flex items-center gap-5 px-5 bg-bg-surface border-b border-bg-border">
       {/* Logo */}
       <span className="font-mono font-bold text-2xl text-accent tracking-tight select-none">
-        vara
+        Vector Lens
       </span>
 
       <div className="flex-1" />

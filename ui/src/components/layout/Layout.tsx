@@ -3,10 +3,10 @@ import { Outlet } from "react-router-dom";
 import { TopBar } from "./TopBar";
 import { Sidebar } from "./Sidebar";
 import { getConfig, getCollections } from "../../api/client";
-import { useVaraStore } from "../../store";
+import { useVlensStore } from "../../store";
 
 export function Layout() {
-  const { setBackends, setCollections, backends } = useVaraStore();
+  const { setBackends, setCollections, backends } = useVlensStore();
 
   useEffect(() => {
     async function bootstrap() {

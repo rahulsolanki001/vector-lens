@@ -3,7 +3,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "vara"
+name = "vector-lens"
 version = "0.1.0"
 description = "Vector database debugger and visualizer — DB-agnostic tooling for RAG developers"
 readme = "README.md"
@@ -78,31 +78,29 @@ dev = [
     "types-requests>=2.31",
 ]
 all = [
-    "vara[qdrant]",
-    "vara[pinecone]",
-    "vara[pgvector]",
-    "vara[milvus]",
-    "vara[viz]",
-    "vara[eval]",
+    "vector-lens[qdrant]",
+    "vector-lens[pinecone]",
+    "vector-lens[pgvector]",
+    "vector-lens[milvus]",
+    "vector-lens[viz]",
+    "vector-lens[eval]",
 ]
 
 [project.scripts]
-vara = "vara.cli:app"
+vlens = "vlens.cli:app"
 
 [project.urls]
-Homepage = "https://github.com/rahulsolanki001/Vara_DB"
-Repository = "https://github.com/rahulsolanki001/Vara_DB"
-Issues = "https://github.com/rahulsolanki001/Vara_DB/issues"
+Homepage = "https://github.com/rahulsolanki001/vector-lens"
+Repository = "https://github.com/rahulsolanki001/vector-lens"
+Issues = "https://github.com/rahulsolanki001/vector-lens/issues"
 
 # ── Hatch (build) ────────────────────────────────────────────────────────────
 [tool.hatch.build.targets.wheel]
-packages = ["vara"]
+packages = ["vlens"]
 
 # Include the pre-built React UI in the source distribution and wheel.
-# `make build` runs `make build-ui` first, so ui/dist is present here.
 [tool.hatch.build.targets.sdist.force-include]
-"ui/dist" = "vara/server/static"
-
+"ui/dist" = "vlens/server/static"
 
 # ── Ruff (lint + format) ─────────────────────────────────────────────────────
 [tool.ruff]
@@ -125,7 +123,7 @@ ignore = [
 ]
 
 [tool.ruff.lint.isort]
-known-first-party = ["vara"]
+known-first-party = ["vlens"]
 
 [tool.ruff.format]
 quote-style = "double"
@@ -139,14 +137,14 @@ warn_unused_configs = true
 
 # Strict on the core logic
 [[tool.mypy.overrides]]
-module = ["vara.core.*", "vara.adapters.*", "vara.config.*"]
+module = ["vlens.core.*", "vlens.adapters.*", "vlens.config.*"]
 strict = true
 disallow_untyped_defs = true
 disallow_any_generics = true
 
 # Relaxed on server (FastAPI decorators confuse strict mypy)
 [[tool.mypy.overrides]]
-module = ["vara.server.*"]
+module = ["vlens.server.*"]
 disallow_untyped_defs = true
 warn_return_any = false
 

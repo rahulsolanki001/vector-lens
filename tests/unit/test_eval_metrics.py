@@ -8,7 +8,7 @@ import math
 
 import pytest
 
-from vara.eval.metrics import latency_percentiles, mrr_at_k, ndcg_at_k, recall_at_k
+from vlens.eval.metrics import latency_percentiles, mrr_at_k, ndcg_at_k, recall_at_k
 
 
 @pytest.mark.unit

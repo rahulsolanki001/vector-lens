@@ -1,4 +1,4 @@
-# Vara UI Plan
+# Vector Lens UI Plan
 
 ## Stack
 
@@ -104,7 +104,7 @@ fontSize: {
 
 ```
 ┌─────────────────────────────────────────────────────────┐
-│  TopBar  [Vara logo]  [backend selector]  [status dot]  │
+│  TopBar  [Vector Lens logo]  [backend selector]  [status dot]  │
 ├──────────┬──────────────────────────────────────────────┤
 │          │                                              │
 │ Sidebar  │           Panel Content Area                 │
@@ -138,7 +138,7 @@ fontSize: {
 Extend the existing store:
 
 ```ts
-type VaraState = {
+type VlensState = {
   // Backend/collection selection
   backendName: string
   collectionName: string

@@ -1,0 +1,36 @@
+vlens:
+  port: 7842
+  open_browser: true
+  log_level: info
+  cors_origins: []
+
+backends:
+  - name: local-qdrant
+    type: qdrant
+    host: localhost
+    port: 6333
+    grpc_port: 6334
+    prefer_grpc: false
+    default_collection: wiki_vectors
+
+  - name: local-pgvector
+    type: pgvector
+    dsn: postgresql://bench:bench@localhost:5432/vectordb
+    table: wiki_vectors
+    id_column: id
+    vector_column: embedding
+    text_column: text
+
+
+  - name: prod-pinecone
+    type: pinecone
+    api_key: pcsk_43Mkrk_SwJGkji8B4RPUQksgbKDsUzG5CaNN3TSSrKJChpJkaWNinTY9M1qFJpe3B1a4te
+    index: wiki_vectors
+    namespace: ""
+
+
+  - name: local-milvus
+    type: milvus
+    host: localhost
+    port: 19530
+    default_collection: wiki_vectors
