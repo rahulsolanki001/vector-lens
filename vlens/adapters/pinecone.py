@@ -1,5 +1,5 @@
 """
-vlens.adapters.pinecone — Pinecone adapter (SDK v9+).
+vlens.adapters.pinecone — Pinecone adapter (SDK v3-v8).
 
 Install: pip install vector-lens[pinecone]
 
@@ -17,7 +17,7 @@ import time
 from typing import Any
 
 try:
-    from pinecone._client import Pinecone
+    from pinecone import Pinecone
 except ImportError as exc:
     raise ImportError(
         "pinecone is required for the Pinecone adapter.\n"

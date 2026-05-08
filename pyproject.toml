@@ -36,7 +36,7 @@ dependencies = [
     "anyio>=4.3.0",
     "umap-learn>=0.5.12",
     "asyncpg>=0.31.0",
-    "pinecone>=9.0.0",
+    "pinecone>=3.0.0,<9.0.0",
     "pymilvus>=2.6.12",
 ]
 
@@ -45,7 +45,7 @@ qdrant = [
     "qdrant-client>=1.8.0",
 ]
 pinecone = [
-    "pinecone>=3.0.0",
+    "pinecone>=3.0.0,<9.0.0",
 ]
 pgvector = [
     "asyncpg>=0.29.0",

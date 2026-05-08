@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Play, Telescope, AlertTriangle } from "lucide-react";
 import type {
@@ -541,6 +541,13 @@ export function QueryDebugger() {
       ? collections.filter((c) => selectedBackends.includes(c.backend_name))
       : collections
   ).filter((c, i, arr) => arr.findIndex((x) => x.name === c.name) === i);
+
+  // Auto-select first collection when options change and current selection is invalid
+  useEffect(() => {
+    if (collectionOptions.length > 0 && !collectionOptions.find((c) => c.name === collectionName)) {
+      setCollectionName(collectionOptions[0].name);
+    }
+  }, [collectionOptions, collectionName]);
 
   function toggleBackend(name: string) {
     setSelectedBackends((prev) =>
