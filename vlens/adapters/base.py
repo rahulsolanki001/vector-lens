@@ -67,6 +67,18 @@ class MilvusConfig(AdapterConfig):
     default_collection: str = ""
 
 
+class ChromaConfig(AdapterConfig):
+    type: str = "chroma"
+    mode: str = "http"  # http | persistent | ephemeral
+    host: str = "localhost"
+    port: int = 8000
+    ssl: bool = False
+    path: str = ""  # for persistent mode
+    tenant: str = "default_tenant"
+    database: str = "default_database"
+    headers: dict[str, str] = Field(default_factory=dict)
+
+
 # ── Collection / index info ───────────────────────────────────────────────────
 
 

@@ -55,8 +55,12 @@ def build_adapter(config: AdapterConfig) -> VecDBAdapter:
             from vlens.adapters.milvus import MilvusAdapter
 
             return MilvusAdapter(config)  # type: ignore[arg-type]
+        case "chroma":
+            from vlens.adapters.chroma import ChromaAdapter
+
+            return ChromaAdapter(config)  # type: ignore[arg-type]
         case _:
             raise ValueError(
                 f"Unknown adapter type '{config.type}'. "
-                f"Valid types: qdrant, pinecone, pgvector, milvus"
+                f"Valid types: qdrant, pinecone, pgvector, milvus, chroma"
             )

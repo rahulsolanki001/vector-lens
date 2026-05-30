@@ -116,7 +116,7 @@ Understand the structure of your embedding space.
 
 ```bash
 # Install with the adapters you need
-pip install -e ".[qdrant,pgvector,milvus,pinecone,dev]"
+pip install -e ".[qdrant,pgvector,milvus,pinecone,chroma,dev]"
 
 cp vlens.yaml.example vlens.yaml
 # Edit vlens.yaml to point at your backends
@@ -197,6 +197,7 @@ vlens eval           # run a retrieval eval from a dataset file and write JSON r
 | pgvector | Complete | asyncpg, cosine/l2/ip auto-detect from `pg_indexes`, HNSW/IVFFlat health |
 | Milvus | Complete | pymilvus 2.4 MilvusClient, Zilliz Cloud, HNSW/IVF health, load-state checks |
 | Pinecone | Complete | SDK v3+, serverless and pod specs, fullness/readiness health checks |
+| ChromaDB | Complete | HTTP, persistent, and ephemeral modes; multi-tenant; HNSW health checks |
 
 ---
 

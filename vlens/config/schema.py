@@ -37,7 +37,7 @@ from pydantic import BaseModel, Field, field_validator, model_validator
 _NAME_RE = re.compile(r"^[a-zA-Z0-9][a-zA-Z0-9_-]{0,63}$")
 
 _VALID_LOG_LEVELS = {"debug", "info", "warning", "error"}
-_VALID_BACKEND_TYPES = {"qdrant", "pinecone", "pgvector", "milvus"}
+_VALID_BACKEND_TYPES = {"qdrant", "pinecone", "pgvector", "milvus", "chroma"}
 
 # Planned but not yet implemented — used to give helpful error messages
 _PLANNED_BACKEND_TYPES: set[str] = set()
@@ -226,7 +226,7 @@ class VlensConfig(BaseModel):
             raise ValueError(
                 f"None of your configured backends are supported in this version of Vector Lens.\n"
                 f"Unsupported types: {', '.join(names)}.\n"
-                f"Supported types: qdrant, pinecone, pgvector, milvus."
+                f"Supported types: qdrant, pinecone, pgvector, milvus, chroma."
             )
 
         return self

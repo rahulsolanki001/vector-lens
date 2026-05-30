@@ -23,6 +23,7 @@ import yaml
 
 from vlens.adapters.base import (
     AdapterConfig,
+    ChromaConfig,
     MilvusConfig,
     PgvectorConfig,
     PineconeConfig,
@@ -34,10 +35,10 @@ from vlens.config.schema import BackendConfig, VlensConfig
 _ENV_VAR_RE = re.compile(r"\$\{([^}]+)\}")
 
 # Backend types fully implemented in this release
-_SUPPORTED_TYPES = {"milvus", "pgvector", "pinecone", "qdrant"}
+_SUPPORTED_TYPES = {"chroma", "milvus", "pgvector", "pinecone", "qdrant"}
 
 # Backend types recognised but not yet implemented
-_PLANNED_TYPES = {"weaviate","chromadb"}
+_PLANNED_TYPES = {"weaviate"}
 
 
 # ── Environment variable interpolation ───────────────────────────────────────
@@ -166,6 +167,8 @@ def resolve_adapter_config(backend: BackendConfig) -> AdapterConfig:
         case "pinecone":
             return PineconeConfig(**data)
 
+        case "chroma":
+            return ChromaConfig(**data)
 
         case t if t in _PLANNED_TYPES:
             raise ValueError(
